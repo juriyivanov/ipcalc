@@ -316,7 +316,6 @@
         <label for="macInput">MAC address or prefix</label>
         <div class="mac-input-row">
           <input type="text" id="macInput" value="00:1A:2B:3C:4D:5E" autocomplete="off" spellcheck="false" inputmode="text" />
-          <button class="primary" id="lookupBtn">Lookup</button>
           <button id="clearBtn">Clear</button>
         </div>
         <div class="error" id="macError"></div>
@@ -326,6 +325,7 @@
           <button class="example" data-mac="00-1A-2B-3C-4D-5E">00-1A-2B-3C-4D-5E</button>
           <button class="example" data-mac="001A2B3C4D5E">001A2B3C4D5E</button>
           <button class="example" data-mac="00:1A:2B">00:1A:2B prefix</button>
+          <button class="primary" id="randomMacBtn" type="button">Random</button>
         </div>
       </div>
 
@@ -693,7 +693,7 @@
 
 
     const macInput = document.getElementById('macInput');
-    const lookupBtn = document.getElementById('lookupBtn');
+    const randomMacBtn = document.getElementById('randomMacBtn');
     const clearBtn = document.getElementById('clearBtn');
     const macError = document.getElementById('macError');
     const resultCard = document.getElementById('resultCard');
@@ -899,7 +899,16 @@
       if (isFullAddress) renderFormats(hex);
     }
 
-    lookupBtn.addEventListener('click', runLookup);
+    function generateRandomMac() {
+      const bytes = crypto.getRandomValues(new Uint8Array(6));
+      bytes[0] = (bytes[0] | 0x02) & 0xfe;
+      return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0').toUpperCase()).join(':');
+    }
+
+    randomMacBtn.addEventListener('click', () => {
+      macInput.value = generateRandomMac();
+      runLookup();
+    });
     macInput.addEventListener('input', runLookup);
     macInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') runLookup();
