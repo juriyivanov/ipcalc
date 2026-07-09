@@ -139,11 +139,13 @@ http://localhost:8000/
    ```
 
 3. Скопируйте нужный формат кнопкой **Copy**.
-4. Для полноценной vendor-базы выполните:
+4. Полная offline vendor-база хранится в `oui-db.json`. Чтобы обновить ее из актуального источника, выполните:
 
    ```bash
    python3 tools/build-oui-db.py --pretty -o oui-db.json
    ```
+
+   По умолчанию генератор берет Wireshark manufacturer database, где объединены публичные MAC-префиксы IEEE MA-L, MA-M и MA-S. Если этот источник недоступен, скрипт автоматически пробует IEEE Registration Authority files; для принудительного IEEE-режима используйте `--ieee-only`.
 
 ## Структура проекта
 
@@ -154,7 +156,7 @@ http://localhost:8000/
 ├── mac.html            # MAC Vendor Lookup и форматтер MAC-адресов
 ├── manifest.json       # PWA manifest
 ├── sw.js               # Service worker для офлайн-кэша
-├── oui-db.json         # Стартовая OUI-база для тестирования
+├── oui-db.json         # Offline MAC vendor database
 ├── tools/
 │   └── build-oui-db.py # Генератор полной OUI-базы
 ├── README-PWA.md       # Инструкция по PWA/GitHub Pages
@@ -165,7 +167,7 @@ http://localhost:8000/
 
 - Современный браузер с поддержкой JavaScript.
 - Для локального HTTP-сервера опционально нужен Python 3.
-- Для генерации полной OUI-базы нужен Python 3 и доступ к локальному systemd hwdb или интернету для скачивания IEEE assignment files.
+- Для обновления полной OUI-базы нужен Python 3 и доступ к локальному systemd hwdb или интернету для скачивания Wireshark/IEEE assignment files.
 
 ## Ограничения
 
@@ -181,7 +183,7 @@ http://localhost:8000/
 - `ipcalc2.html` — IPv4-инструменты;
 - `mac.html` — MAC lookup и форматирование;
 - `oui-db.json` — offline vendor database;
-- `tools/build-oui-db.py` — обновление OUI-базы;
+- `tools/build-oui-db.py` — обновление OUI-базы из systemd hwdb, Wireshark или IEEE;
 - `index.html` + `manifest.json` + `sw.js` — PWA-обвязка.
 
 ## Лицензия
