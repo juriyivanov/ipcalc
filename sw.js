@@ -1,4 +1,5 @@
-const CACHE_NAME = 'ipcalc-pwa-v2';
+const CACHE_NAME = 'ipcalc-pwa-v3';
+const OUI_DB_PATH = '/ipcalc/oui-db.json';
 
 const PRECACHE_URLS = [
   './',
@@ -32,11 +33,40 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+async function fetchOuiDbNetworkFirst(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const networkRequest = new Request(request.url, {
+    method: 'GET',
+    headers: request.headers,
+    mode: request.mode,
+    credentials: request.credentials,
+    redirect: request.redirect,
+    cache: 'reload'
+  });
+
+  try {
+    const response = await fetch(networkRequest);
+    if (response && response.ok) {
+      await cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    const cachedResponse = await cache.match(request);
+    if (cachedResponse) return cachedResponse;
+    return cache.match('./oui-db.json');
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const requestUrl = new URL(event.request.url);
   if (requestUrl.origin !== self.location.origin) return;
+
+  if (requestUrl.pathname === OUI_DB_PATH || requestUrl.pathname.endsWith('/oui-db.json')) {
+    event.respondWith(fetchOuiDbNetworkFirst(event.request));
+    return;
+  }
 
   if (event.request.mode === 'navigate') {
     event.respondWith(
