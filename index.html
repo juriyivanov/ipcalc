@@ -29,11 +29,49 @@
       padding: 0;
       overflow: hidden;
       background: #1f2937;
+      color: #f9fafb;
+      font-family: Arial, sans-serif;
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .top-nav {
+      display: flex;
+      gap: 8px;
+      padding: 8px;
+      background: #111827;
+      border-bottom: 1px solid #374151;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .nav-button {
+      border: 1px solid #4b5563;
+      border-radius: 8px;
+      background: #1f2937;
+      color: #f9fafb;
+      padding: 8px 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .nav-button.active {
+      background: #60a5fa;
+      border-color: #60a5fa;
+      color: #111827;
     }
 
     .app-frame {
       width: 100%;
       height: 100%;
+      min-height: 0;
       border: 0;
       display: block;
       background: #333;
@@ -56,8 +94,23 @@
       JavaScript is required to run Extended IP Calculator.
     </div>
   </noscript>
-  <iframe class="app-frame" title="Extended IP Calculator" src="./ipcalc2.html"></iframe>
+  <div class="app-shell">
+    <nav class="top-nav" aria-label="App tools">
+      <button class="nav-button active" data-src="./ipcalc2.html">IPv4 Calculator</button>
+      <button class="nav-button" data-src="./mac.html">MAC Vendor / Formats</button>
+    </nav>
+    <iframe class="app-frame" id="appFrame" title="Extended IP Calculator" src="./ipcalc2.html"></iframe>
+  </div>
   <script>
+    const appFrame = document.getElementById('appFrame');
+    document.querySelectorAll('.nav-button').forEach((button) => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.nav-button').forEach((item) => item.classList.remove('active'));
+        button.classList.add('active');
+        appFrame.src = button.dataset.src;
+      });
+    });
+
     if ('serviceWorker' in navigator && window.isSecureContext && location.protocol !== 'file:') {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')

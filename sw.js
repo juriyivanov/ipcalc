@@ -1,9 +1,11 @@
-const CACHE_NAME = 'ipcalc-pwa-v1';
+const CACHE_NAME = 'ipcalc-pwa-v2';
 
 const PRECACHE_URLS = [
   './',
   './index.html',
   './ipcalc2.html',
+  './mac.html',
+  './oui-db.json',
   './manifest.json',
   './icon.svg',
   './icon-192.svg',

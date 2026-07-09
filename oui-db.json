@@ -1,0 +1,102 @@
+{
+  "generatedAt": "starter-db",
+  "source": "Starter database for testing. Replace by running tools/build-oui-db.py for the full IEEE/systemd-derived database.",
+  "entries": {
+    "001A2B": {
+      "vendor": "Example Networks",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "000C42": {
+      "vendor": "Routerboard.com",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "4C5E0C": {
+      "vendor": "Routerboard.com",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "D4CA6D": {
+      "vendor": "Routerboard.com",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "001B63": {
+      "vendor": "Apple, Inc.",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "F0D1A9": {
+      "vendor": "Apple, Inc.",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "A4C361": {
+      "vendor": "Apple, Inc.",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "0017F2": {
+      "vendor": "Apple, Inc.",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "3C5A37": {
+      "vendor": "Samsung Electronics Co.,Ltd",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "001632": {
+      "vendor": "Samsung Electronics Co.,Ltd",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "001A11": {
+      "vendor": "Google, Inc.",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "F4F5D8": {
+      "vendor": "Google, Inc.",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "B827EB": {
+      "vendor": "Raspberry Pi Foundation",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "DCA632": {
+      "vendor": "Raspberry Pi Trading Ltd",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "24A160": {
+      "vendor": "Espressif Inc.",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "30AEA4": {
+      "vendor": "Espressif Inc.",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "001122": {
+      "vendor": "CIMSYS Inc",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "00163E": {
+      "vendor": "Xensource, Inc.",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "080027": {
+      "vendor": "PCS Systemtechnik GmbH",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "525400": {
+      "vendor": "QEMU / KVM default locally administered range",
+      "type": "local convention, not IEEE OUI"
+    },
+    "00005E": {
+      "vendor": "IANA",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "00000C": {
+      "vendor": "Cisco Systems, Inc",
+      "type": "MA-L / OUI, 24-bit prefix"
+    },
+    "0011223": {
+      "vendor": "Example MA-M 28-bit match",
+      "type": "MA-M / OUI-28, 28-bit prefix"
+    },
+    "001122334": {
+      "vendor": "Example MA-S 36-bit match",
+      "type": "MA-S / OUI-36, 36-bit prefix"
+    }
+  }
+}
