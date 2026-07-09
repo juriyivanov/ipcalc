@@ -1,11 +1,9 @@
-const CACHE_NAME = 'ipcalc-pwa-v3';
+const CACHE_NAME = 'ipcalc-pwa-v4';
 const OUI_DB_PATH = '/ipcalc/oui-db.json';
 
 const PRECACHE_URLS = [
   './',
   './index.html',
-  './ipcalc2.html',
-  './mac.html',
   './oui-db.json',
   './manifest.json',
   './icon.svg',
