@@ -235,10 +235,10 @@
 <body>
   <div class="container">
     <h1>MAC Vendor Lookup</h1>
-    <p class="muted">Enter a MAC address in almost any common format. The formatter is fully local; vendor lookup uses the bundled offline OUI database.</p>
+    <p class="muted">Enter a full MAC address or a vendor prefix in almost any common format. The formatter is fully local; vendor lookup uses the bundled offline OUI database.</p>
 
     <div class="form-group">
-      <label for="macInput">MAC address</label>
+      <label for="macInput">MAC address or prefix</label>
       <div class="input-row">
         <input type="text" id="macInput" value="00:1A:2B:3C:4D:5E" autocomplete="off" spellcheck="false" inputmode="text" />
         <button class="primary" id="lookupBtn">Lookup</button>
@@ -250,6 +250,7 @@
         <button class="example" data-mac="001a.2b3c.4d5e">001a.2b3c.4d5e</button>
         <button class="example" data-mac="00-1A-2B-3C-4D-5E">00-1A-2B-3C-4D-5E</button>
         <button class="example" data-mac="001A2B3C4D5E">001A2B3C4D5E</button>
+        <button class="example" data-mac="00:1A:2B">00:1A:2B prefix</button>
       </div>
     </div>
 
@@ -308,10 +309,12 @@
 
     function normalizeMac(input) {
       const hex = input.trim().replace(/[^0-9a-fA-F]/g, '').toUpperCase();
-      if (!hex) return { error: 'Enter a MAC address.' };
-      if (hex.length !== 12) return { error: `Expected 12 hex digits, got ${hex.length}.` };
-      if (!/^[0-9A-F]{12}$/.test(hex)) return { error: 'MAC must contain only hexadecimal digits.' };
-      return { hex };
+      if (!hex) return { error: 'Enter a MAC address or vendor prefix.' };
+      if (hex.length < 6 || hex.length > 12) {
+        return { error: `Enter 6 to 12 hex digits for a vendor prefix or full MAC address; got ${hex.length}.` };
+      }
+      if (!/^[0-9A-F]{6,12}$/.test(hex)) return { error: 'MAC must contain only hexadecimal digits.' };
+      return { hex, isFullAddress: hex.length === 12 };
     }
 
     function group(hex, size, sep) {
@@ -321,19 +324,16 @@
     function formatMacs(hex) {
       const lower = hex.toLowerCase();
       return [
-        ['Colon uppercase', group(hex, 2, ':')],
+        ['Colon uppercase (MikroTik/Linux style)', group(hex, 2, ':')],
         ['Colon lowercase', group(lower, 2, ':')],
-        ['Hyphen uppercase', group(hex, 2, '-')],
+        ['Hyphen uppercase (D-Link style)', group(hex, 2, '-')],
         ['Hyphen lowercase', group(lower, 2, '-')],
-        ['Cisco dotted', group(lower, 4, '.')],
+        ['Cisco dotted lowercase', group(lower, 4, '.')],
         ['Cisco dotted uppercase', group(hex, 4, '.')],
         ['Plain uppercase', hex],
         ['Plain lowercase', lower],
         ['Space separated', group(hex, 2, ' ')],
-        ['0x-prefixed', '0x' + hex],
-        ['D-Link show fdb', group(hex, 2, '-')],
-        ['Cisco show mac address-table', group(lower, 4, '.')],
-        ['MikroTik / Linux', group(hex, 2, ':')]
+        ['0x-prefixed', '0x' + hex]
       ];
     }
 
@@ -356,7 +356,8 @@
 
     function lookupVendor(db, hex) {
       const entries = db.entries || db;
-      const prefixes = [hex.slice(0, 9), hex.slice(0, 7), hex.slice(0, 6)];
+      const prefixLengths = [9, 7, 6].filter((length) => hex.length >= length);
+      const prefixes = prefixLengths.map((length) => hex.slice(0, length));
       for (const prefix of prefixes) {
         const record = entries[prefix];
         if (!record) continue;
@@ -372,7 +373,7 @@
       return null;
     }
 
-    function renderBadges(flags) {
+    function renderBadges(flags, isFullAddress) {
       flagBadges.innerHTML = '';
       const badges = [];
 
@@ -447,22 +448,23 @@
       }
 
       const hex = normalized.hex;
-      const flags = macFlags(hex);
+      const flags = macFlags(hex.padEnd(12, '0'));
       const db = await loadOuiDb();
       const match = lookupVendor(db, hex);
+      const isFullAddress = normalized.isFullAddress;
 
       resultCard.style.display = 'block';
-      formatsCard.style.display = 'block';
+      formatsCard.style.display = isFullAddress ? 'block' : 'none';
 
-      if (flags.isBroadcast) {
+      if (isFullAddress && flags.isBroadcast) {
         vendorName.textContent = 'Not applicable for broadcast address';
         matchedPrefix.textContent = '—';
         assignmentType.textContent = 'Broadcast';
-      } else if (flags.isMulticast) {
+      } else if (isFullAddress && flags.isMulticast) {
         vendorName.textContent = 'Not reliable for multicast/group address';
         matchedPrefix.textContent = '—';
         assignmentType.textContent = 'Multicast / group address';
-      } else if (flags.isLocal) {
+      } else if (isFullAddress && flags.isLocal) {
         vendorName.textContent = match ? `${match.vendor} (prefix match, but MAC is local/randomized)` : 'Locally administered or randomized MAC';
         matchedPrefix.textContent = match ? match.prefix : '—';
         assignmentType.textContent = match ? match.type : 'Local address';
@@ -472,13 +474,13 @@
         assignmentType.textContent = match.type;
       } else {
         vendorName.textContent = 'Vendor not found in bundled database';
-        matchedPrefix.textContent = hex.slice(0, 6);
+        matchedPrefix.textContent = hex.length >= 6 ? hex.slice(0, Math.min(hex.length, 9)) : '—';
         assignmentType.textContent = 'No matching MA-L/MA-M/MA-S prefix';
       }
 
       dbStatus.textContent = ouiDbLoadState;
-      renderBadges(flags);
-      renderFormats(hex);
+      renderBadges(flags, isFullAddress);
+      if (isFullAddress) renderFormats(hex);
     }
 
     lookupBtn.addEventListener('click', runLookup);
