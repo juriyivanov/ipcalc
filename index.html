@@ -161,6 +161,8 @@
       --mac-border: #cbd5e1;
       --mac-badge-bg: #eef2ff;
       --mac-badge-text: #1f2937;
+      --mac-badge-ok-text: #166534;
+      --mac-badge-warn-text: #92400e;
     }
     .dark-mode {
       --mac-card-bg: #3b3b3b;
@@ -169,6 +171,8 @@
       --mac-border: #666;
       --mac-badge-bg: #555;
       --mac-badge-text: #eee;
+      --mac-badge-ok-text: #86efac;
+      --mac-badge-warn-text: #fbbf24;
     }
     .muted { color: var(--mac-muted); font-size: 0.95em; }
     .mac-input-row { display: flex; gap: 8px; align-items: stretch; }
@@ -182,8 +186,8 @@
     .vendor-name { font-family: Arial, sans-serif; font-weight: bold; }
     .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
     .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; background: var(--mac-badge-bg); border: 1px solid var(--mac-border); color: var(--mac-badge-text); font-size: 0.9em; }
-    .badge.ok { border-color: #166534; color: #86efac; }
-    .badge.warn { border-color: #92400e; color: #fbbf24; }
+    .badge.ok { border-color: #166534; color: var(--mac-badge-ok-text); }
+    .badge.warn { border-color: #92400e; color: var(--mac-badge-warn-text); }
     .formats { margin-top: 16px; display: grid; gap: 8px; }
     .format-row { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px; border: 1px solid var(--mac-border); border-radius: 8px; background: var(--mac-row-bg); }
     .format-label { font-weight: bold; color: var(--mac-muted); font-size: 0.92em; }
@@ -342,6 +346,7 @@
           <button class="example" data-mac="001A2B3C4D5E">001A2B3C4D5E</button>
           <button class="example" data-mac="00:1A:2B">00:1A:2B prefix</button>
           <button class="primary" id="randomMacBtn" type="button">Random</button>
+          <button class="primary" id="randomVendorMacBtn" type="button">Random vendor MAC</button>
         </div>
       </div>
 
@@ -710,6 +715,7 @@
 
     const macInput = document.getElementById('macInput');
     const randomMacBtn = document.getElementById('randomMacBtn');
+    const randomVendorMacBtn = document.getElementById('randomVendorMacBtn');
     const clearBtn = document.getElementById('clearBtn');
     const macError = document.getElementById('macError');
     const resultCard = document.getElementById('resultCard');
@@ -921,8 +927,35 @@
       return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0').toUpperCase()).join(':');
     }
 
+    function randomHex(length) {
+      const bytes = crypto.getRandomValues(new Uint8Array(Math.ceil(length / 2)));
+      return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0').toUpperCase()).join('').slice(0, length);
+    }
+
+    function generateRandomVendorMac(db) {
+      const entries = db.entries || db;
+      const prefixes = Object.keys(entries).filter((prefix) => /^[0-9A-F]{6,9}$/.test(prefix));
+      if (!prefixes.length) return null;
+
+      const randomIndex = crypto.getRandomValues(new Uint32Array(1))[0] % prefixes.length;
+      const prefix = prefixes[randomIndex];
+      const hex = `${prefix}${randomHex(12 - prefix.length)}`;
+      return group(hex, 2, ':');
+    }
+
     randomMacBtn.addEventListener('click', () => {
       macInput.value = generateRandomMac();
+      runLookup();
+    });
+    randomVendorMacBtn.addEventListener('click', async () => {
+      macError.textContent = '';
+      const db = await loadOuiDb();
+      const mac = generateRandomVendorMac(db);
+      if (!mac) {
+        macError.textContent = 'OUI database is not available for random vendor MAC generation.';
+        return;
+      }
+      macInput.value = mac;
       runLookup();
     });
     macInput.addEventListener('input', runLookup);

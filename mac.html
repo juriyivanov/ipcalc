@@ -244,6 +244,7 @@
         <input type="text" id="macInput" value="00:1A:2B:3C:4D:5E" autocomplete="off" spellcheck="false" inputmode="text" />
         <button class="primary" id="lookupBtn">Lookup</button>
         <button id="clearBtn">Clear</button>
+        <button class="primary" id="randomVendorMacBtn" type="button">Random vendor MAC</button>
       </div>
       <div class="error" id="macError"></div>
       <div class="examples small muted">
@@ -279,6 +280,7 @@
   <script>
     const macInput = document.getElementById('macInput');
     const lookupBtn = document.getElementById('lookupBtn');
+    const randomVendorMacBtn = document.getElementById('randomVendorMacBtn');
     const clearBtn = document.getElementById('clearBtn');
     const macError = document.getElementById('macError');
     const resultCard = document.getElementById('resultCard');
@@ -484,7 +486,35 @@
       if (isFullAddress) renderFormats(hex);
     }
 
+
+    function randomHex(length) {
+      const bytes = crypto.getRandomValues(new Uint8Array(Math.ceil(length / 2)));
+      return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0').toUpperCase()).join('').slice(0, length);
+    }
+
+    function generateRandomVendorMac(db) {
+      const entries = db.entries || db;
+      const prefixes = Object.keys(entries).filter((prefix) => /^[0-9A-F]{6,9}$/.test(prefix));
+      if (!prefixes.length) return null;
+
+      const randomIndex = crypto.getRandomValues(new Uint32Array(1))[0] % prefixes.length;
+      const prefix = prefixes[randomIndex];
+      const hex = `${prefix}${randomHex(12 - prefix.length)}`;
+      return group(hex, 2, ':');
+    }
+
     lookupBtn.addEventListener('click', runLookup);
+    randomVendorMacBtn.addEventListener('click', async () => {
+      macError.textContent = '';
+      const db = await loadOuiDb();
+      const mac = generateRandomVendorMac(db);
+      if (!mac) {
+        macError.textContent = 'OUI database is not available for random vendor MAC generation.';
+        return;
+      }
+      macInput.value = mac;
+      runLookup();
+    });
     macInput.addEventListener('input', runLookup);
     macInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') runLookup();
