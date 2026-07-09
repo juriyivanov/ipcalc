@@ -154,23 +154,39 @@
       cursor: pointer;
     }
     /* MAC Vendor tab */
-    .muted { color: #c7c7c7; font-size: 0.95em; }
+    :root {
+      --mac-card-bg: #f8fafc;
+      --mac-row-bg: #ffffff;
+      --mac-muted: #475569;
+      --mac-border: #cbd5e1;
+      --mac-badge-bg: #eef2ff;
+      --mac-badge-text: #1f2937;
+    }
+    .dark-mode {
+      --mac-card-bg: #3b3b3b;
+      --mac-row-bg: #3f3f3f;
+      --mac-muted: #c7c7c7;
+      --mac-border: #666;
+      --mac-badge-bg: #555;
+      --mac-badge-text: #eee;
+    }
+    .muted { color: var(--mac-muted); font-size: 0.95em; }
     .mac-input-row { display: flex; gap: 8px; align-items: stretch; }
     .mac-input-row input[type="text"] { flex: 1; min-width: 0; padding: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .primary { background: #60a5fa; border-color: #60a5fa; color: #111827; }
     .primary:hover { background: #93c5fd; }
-    .result-card { margin-top: 16px; padding: 14px; border: 1px solid #666; background: #3b3b3b; border-radius: 8px; }
+    .result-card { margin-top: 16px; padding: 14px; border: 1px solid var(--mac-border); background: var(--mac-card-bg); border-radius: 8px; }
     .result-grid { display: grid; grid-template-columns: minmax(150px, 0.6fr) minmax(0, 1.4fr); gap: 8px 14px; align-items: center; }
-    .key { color: #c7c7c7; font-weight: bold; }
-    .value, .format-value { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .key { color: var(--mac-muted); font-weight: bold; }
+    .value, .format-value { color: inherit; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .vendor-name { font-family: Arial, sans-serif; font-weight: bold; }
     .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; background: #555; border: 1px solid #666; color: #eee; font-size: 0.9em; }
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; background: var(--mac-badge-bg); border: 1px solid var(--mac-border); color: var(--mac-badge-text); font-size: 0.9em; }
     .badge.ok { border-color: #166534; color: #86efac; }
     .badge.warn { border-color: #92400e; color: #fbbf24; }
     .formats { margin-top: 16px; display: grid; gap: 8px; }
-    .format-row { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px; border: 1px solid #666; border-radius: 8px; background: #3f3f3f; }
-    .format-label { font-weight: bold; color: #c7c7c7; font-size: 0.92em; }
+    .format-row { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px; border: 1px solid var(--mac-border); border-radius: 8px; background: var(--mac-row-bg); }
+    .format-label { font-weight: bold; color: var(--mac-muted); font-size: 0.92em; }
     .copy-button { white-space: nowrap; }
     .small { font-size: 0.9em; }
     .examples { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
