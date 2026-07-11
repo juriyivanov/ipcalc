@@ -1,6 +1,6 @@
-const CACHE_NAME='ipcalc-pwa-v9';
+const CACHE_NAME='ipcalc-pwa-v10';
 const OUI_DB_PATH='/ipcalc/oui-db.json';
-const ASSETS=['./','./index.html','./oui-db.json','./manifest.json','./icon.svg','./icon-192.svg','./icon-512.svg','./theme-overrides.css','./range-controls.css','./ui-enhancements.js','./range-controls.js'];
+const ASSETS=['./','./index.html','./oui-db.json','./manifest.json','./icon.svg','./icon-192.svg','./icon-512.svg','./theme-overrides.css','./range-controls.css','./ipv4-utils.js','./ui-enhancements.js','./range-controls.js'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE_NAME).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
 
@@ -20,6 +20,7 @@ async function enhanceHtml(r){
   for(const [n,t,z] of [
     ['theme-overrides.css','<link rel="stylesheet" href="./theme-overrides.css">','</head>'],
     ['range-controls.css','<link rel="stylesheet" href="./range-controls.css">','</head>'],
+    ['ipv4-utils.js','<script src="./ipv4-utils.js"></script>','</head>'],
     ['ui-enhancements.js','<script src="./ui-enhancements.js" defer></script>','</body>'],
     ['range-controls.js','<script src="./range-controls.js" defer></script>','</body>']])
     if(!h.includes(n))h=h.includes(z)?h.replace(z,`  ${t}\n${z}`):`${h}\n${t}`;

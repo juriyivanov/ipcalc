@@ -42,16 +42,7 @@
 
 ## Быстрый старт
 
-### Старый режим
-
-1. Склонируйте репозиторий или скачайте файл `ipcalc2.html`.
-2. Откройте `ipcalc2.html` в любом современном браузере.
-
-Дополнительная установка не требуется.
-
-### PWA-режим
-
-Запустите локальный HTTP-сервер из корня репозитория:
+Актуальная версия приложения находится в `index.html`. Для локальной проверки запускайте приложение через HTTP-сервер из корня репозитория:
 
 ```bash
 python3 -m http.server 8000
@@ -63,7 +54,9 @@ python3 -m http.server 8000
 http://localhost:8000/
 ```
 
-Подробности по GitHub Pages и офлайн-режиму: [`README-PWA.md`](README-PWA.md).
+Прямое открытие `index.html` из файловой системы возможно для базового просмотра, но PWA/service worker и офлайн-кэш корректно работают только через HTTP(S). Подробности по GitHub Pages и офлайн-режиму: [`README-PWA.md`](README-PWA.md).
+
+> `ipcalc2.html` оставлен только как устаревший legacy-файл для старых прямых ссылок. Он не является актуальным способом запуска и не содержит текущие исправления IPv4-валидации, Range to CIDR и ограничения вывода подсетей.
 
 ## Как пользоваться
 
@@ -151,16 +144,22 @@ http://localhost:8000/
 
 ```text
 .
-├── index.html          # PWA-обертка и навигация между инструментами
-├── ipcalc2.html        # HTML, CSS и JavaScript IPv4-калькулятора
-├── mac.html            # MAC Vendor Lookup и форматтер MAC-адресов
-├── manifest.json       # PWA manifest
-├── sw.js               # Service worker для офлайн-кэша
-├── oui-db.json         # Offline MAC vendor database
+├── index.html                    # Актуальная статическая версия приложения и навигация между инструментами
+├── ipv4-utils.js                 # Общие IPv4-утилиты, строгий разбор и тестируемые расчеты
+├── ipcalc2.html                  # Устаревший legacy-файл для старых прямых ссылок, не актуальная версия
+├── mac.html                      # MAC Vendor Lookup и форматтер MAC-адресов
+├── manifest.json                 # PWA manifest
+├── sw.js                         # Service worker для офлайн-кэша
+├── oui-db.json                   # Offline MAC vendor database
+├── range-controls.js             # Дополнительные кнопки управления диапазоном IPv4
+├── ui-enhancements.js            # Дополнительные UI-улучшения без сборки
+├── test/
+│   └── ipv4-utils.test.js        # Node.js unit-тесты IPv4-логики
 ├── tools/
-│   └── build-oui-db.py # Генератор полной OUI-базы
-├── README-PWA.md       # Инструкция по PWA/GitHub Pages
-└── README.md           # Документация проекта
+│   ├── build-oui-db.py           # Генератор полной OUI-базы
+│   └── check-index-inline-js.js  # Syntax check inline JavaScript из index.html
+├── README-PWA.md                 # Инструкция по PWA/GitHub Pages
+└── README.md                     # Документация проекта
 ```
 
 ## Требования
@@ -178,13 +177,32 @@ http://localhost:8000/
 
 ## Разработка
 
-Проект остаётся статическим. Основные части:
+Проект остаётся статическим HTML/CSS/JavaScript-приложением без npm-сборки и внешних runtime-зависимостей. Основной файл для разработки и локальной проверки — `index.html`; запускайте его через HTTP-сервер, например `python3 -m http.server 8000`.
 
-- `ipcalc2.html` — IPv4-инструменты;
-- `mac.html` — MAC lookup и форматирование;
+Основные части:
+
+- `index.html` — актуальные IPv4-инструменты, MAC Vendor / Formats и подключение общих скриптов;
+- `ipv4-utils.js` — общие IPv4-операции и чистые функции, покрытые unit-тестами;
+- `range-controls.js` — кнопки `IP−`, `IP+`, `/−`, `/+` для Range Converter;
+- `manifest.json` + `sw.js` — PWA/offline-режим и stale-while-revalidate для `oui-db.json`;
+- `mac.html` — отдельная страница MAC lookup и форматирования;
 - `oui-db.json` — offline vendor database;
 - `tools/build-oui-db.py` — обновление OUI-базы из systemd hwdb, Wireshark или IEEE;
-- `index.html` + `manifest.json` + `sw.js` — PWA-обвязка.
+- `tools/check-index-inline-js.js` — проверка синтаксиса inline JavaScript из `index.html`;
+- `test/ipv4-utils.test.js` — Node.js unit-тесты.
+
+`ipcalc2.html` — legacy-файл. Его не следует использовать как источник актуальной логики или как рекомендуемый режим запуска; файл пока сохранён только для обратной совместимости со старыми прямыми ссылками.
+
+Минимальные проверки перед изменениями:
+
+```bash
+node --check ipv4-utils.js
+node --check range-controls.js
+node --check sw.js
+node --check tools/check-index-inline-js.js
+node tools/check-index-inline-js.js
+node --test
+```
 
 ## Лицензия
 
