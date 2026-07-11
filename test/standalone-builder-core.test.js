@@ -4,26 +4,82 @@ const path = require('path');
 const vm = require('vm');
 const Core = require('../standalone-builder-core.js');
 const root = path.join(__dirname, '..');
-const sources = Object.fromEntries([...Core.SOURCE_FILES, 'oui-db.json'].map((f) => [f, fs.readFileSync(path.join(root, f), 'utf8')]));
-const full = Core.buildFull(sources);
-const lite = Core.buildLite(sources);
+const sourceFiles = [...Core.SOURCE_FILES, 'oui-db.json'];
+const sources = Object.fromEntries(sourceFiles.map((f) => [f, fs.readFileSync(path.join(root, f), 'utf8')]));
+
 function hasAll(html, items) { for (const item of items) assert(html.includes(item), `missing ${item}`); }
 function hasNone(html, items) { for (const item of items) assert(!html.includes(item), `unexpected ${item}`); }
-function scripts(html) { return [...html.matchAll(/<script(?![^>]*type="application\/json")[^>]*>([\s\S]*?)<\/script>/gi)].map((m) => m[1]); }
+function scripts(html) { return Core.getInlineScripts(html); }
 function checkScripts(html) { scripts(html).forEach((code, i) => new vm.Script(code, { filename: `inline-${i}.js` })); }
 function noExternal(html) { hasNone(html, ['<script src=', 'rel="stylesheet"', 'rel="manifest"', 'navigator.serviceWorker.register', "fetch('./oui-db.json'"]); }
+function count(html, text) { return html.split(text).length - 1; }
+function ids(html) { return new Set([...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1])); }
+function assertIds(html, required, forbidden = []) {
+  const actual = ids(html);
+  required.forEach((id) => assert(actual.has(id), `missing DOM id #${id}`));
+  forbidden.forEach((id) => assert(!actual.has(id), `unexpected DOM id #${id}`));
+}
+function buildAndValidate(src = sources) {
+  const full = Core.buildFull(src);
+  const lite = Core.buildLite(src);
+  Core.validateStandaloneOutput(full, 'full');
+  Core.validateStandaloneOutput(lite, 'lite');
+  checkScripts(full);
+  checkScripts(lite);
+  return { full, lite };
+}
 
-hasAll(full, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'MAC Vendor / Formats', 'Copy formats', 'embedded-oui-db', 'Vendor', 'Matched prefix', 'Assignment type', 'Random vendor MAC']);
+const { full, lite } = buildAndValidate();
+
+hasAll(full, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'MAC Vendor / Formats', 'Copy formats', 'embedded-oui-db', 'Vendor', 'Matched prefix', 'Assignment type', 'Random vendor MAC', 'function lookupVendor']);
 noExternal(full);
-checkScripts(full);
 
-hasAll(lite, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'MAC Formats', 'Colon uppercase', 'Colon lowercase', 'Hyphen uppercase', 'Hyphen lowercase', 'Cisco dotted lowercase', 'Cisco dotted uppercase', 'Plain uppercase', 'Plain lowercase', 'Space separated', '0x-prefixed', 'Random MAC', 'Unicast', 'Multicast / group address', 'Broadcast', 'Globally administered', 'Locally administered / randomized possible']);
+hasAll(lite, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'MAC Formats', 'Colon uppercase', 'Colon lowercase', 'Hyphen uppercase', 'Hyphen lowercase', 'Cisco dotted lowercase', 'Cisco dotted uppercase', 'Plain uppercase', 'Plain lowercase', 'Space separated', '0x-prefixed', 'Random MAC', 'Unicast', 'Multicast / group address', 'Broadcast', 'Globally administered', 'Locally administered / randomized possible', 'function runFormatterOnly']);
 hasNone(lite, ['Vendor', 'Matched prefix', 'Assignment type', 'Random vendor MAC', 'oui-db.json', 'embedded-oui-db', 'lookupVendor', 'loadOuiDb', 'Vendor not found', 'OUI database', 'bundled vendor database']);
 noExternal(lite);
-checkScripts(lite);
+assert(!/const\s+response\s*=\s*await\s*(?:[;\n\r]|$)/.test(lite), 'Lite must not contain dangling await');
 assert(lite.length < full.length * 0.7, 'Lite should be noticeably smaller than Full');
 assert(!fs.existsSync(path.join(root, 'ipcalc2.html')), 'ipcalc2.html must be absent');
 assert(!fs.existsSync(path.join(root, 'mac.html')), 'mac.html must be absent');
+
 const builder = fs.readFileSync(path.join(root, 'standalone-builder.html'), 'utf8');
 hasAll(builder, ['Build and download Full standalone', 'Build and download Lite standalone']);
+
+assertIds(lite, [
+  'toggleDarkModeBtn', 'analyzer', 'range', 'subnet', 'mac-vendor', 'ipInput', 'subnetInput', 'rangeStart', 'rangeEnd',
+  'baseNetwork', 'baseCIDR', 'newCIDR', 'convertRangeBtn', 'subnetCalcBtn', 'macInput', 'clearBtn',
+  'macError', 'resultCard', 'formatsCard', 'flagBadges', 'formatsList', 'randomMacBtn'
+], ['randomVendorMacBtn', 'vendorName', 'matchedPrefix', 'assignmentType', 'dbStatus']);
+hasAll(lite, [
+  "tabButtons.forEach(btn =>", "btn.addEventListener('click'", "toggleDarkModeBtn.addEventListener('click'",
+  "convertRangeBtn.addEventListener('click'",
+  "subnetCalcBtn.addEventListener('click'", "randomMacBtn.addEventListener('click'",
+  "macInput.addEventListener('input'", "clearBtn.addEventListener('click'"
+]);
+
+const staleSources = { ...sources };
+staleSources['index.html'] = sources['index.html']
+  .replace(/\s*<!-- MAC_VENDOR_HTML_START -->/g, '')
+  .replace(/\s*<!-- MAC_VENDOR_HTML_END -->/g, '')
+  .replace(/\s*\/\* MAC_VENDOR_JS_START \*\//g, '')
+  .replace(/\s*\/\* MAC_VENDOR_JS_END \*\//g, '')
+  .replace(/\s*\/\* OUI_LOADER_JS_START \*\//g, '')
+  .replace(/\s*\/\* OUI_LOADER_JS_END \*\//g, '')
+  .replace(/\n\s*function runFormatterOnly\(\) \{[\s\S]*?\n\s*}\n\n\s*function generateRandomMac/, '\n    function generateRandomMac');
+assert.throws(() => Core.buildLite(staleSources), /incompatible|stale|markers/i);
+
+const enhancedSources = { ...sources };
+enhancedSources['index.html'] = sources['index.html']
+  .replace('</head>', '  <link rel="stylesheet" href="./theme-overrides.css">\n  <link rel="stylesheet" href="./range-controls.css">\n</head>')
+  .replace('</body>', '  <script src="./ui-enhancements.js" defer></script>\n  <script src="./range-controls.js" defer></script>\n</body>');
+const enhanced = buildAndValidate(enhancedSources);
+[enhanced.full, enhanced.lite].forEach((html) => {
+  noExternal(html);
+  assert.strictEqual(count(html, 'data-standalone-source="theme-overrides.css"'), 1, 'theme CSS should be inlined once');
+  assert.strictEqual(count(html, 'data-standalone-source="range-controls.css"'), 1, 'range CSS should be inlined once');
+  assert.strictEqual(count(html, 'data-standalone-source="ui-enhancements.js"'), 1, 'UI JS should be inlined once');
+  assert.strictEqual(count(html, 'data-standalone-source="range-controls.js"'), 1, 'range JS should be inlined once');
+  checkScripts(html);
+});
+
 console.log(`Full ${Core.formatBytes(Core.bytes(full))}; Lite ${Core.formatBytes(Core.bytes(lite))}`);

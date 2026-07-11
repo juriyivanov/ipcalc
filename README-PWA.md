@@ -74,7 +74,7 @@ Service worker кэширует `oui-db.json`, поэтому lookup будет 
 https://juriyivanov.github.io/ipcalc/standalone-builder.html
 ```
 
-Service worker кэширует файлы builder-а и исходники приложения. После первого успешного открытия Lite можно собрать из кэша; Full требует доступную закэшированную или сетевую `oui-db.json`.
+Service worker кэширует файлы builder-а и исходники приложения. Builder загружает исходники network-first с cache-busting revision и использует Cache Storage только как offline fallback; несовместимый старый `index.html` блокирует сборку с понятной ошибкой. После первого успешного открытия Lite можно собрать из кэша; Full требует доступную закэшированную или сетевую `oui-db.json`.
 
 ## Публикация через GitHub Pages
 

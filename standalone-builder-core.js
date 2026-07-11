@@ -7,11 +7,33 @@
   const SOURCE_FILES = ['index.html', 'ipv4-utils.js', 'theme-overrides.css', 'range-controls.css', 'range-controls.js', 'ui-enhancements.js'];
   const FULL_FILENAME = 'ipcalc-standalone-full.html';
   const LITE_FILENAME = 'ipcalc-standalone-lite.html';
+  const INCOMPATIBLE_INDEX_MESSAGE = 'The cached index.html is incompatible with this Standalone Builder. Reload sources from the network or clear the old site cache.';
+  const MAC_MARKERS = ['MAC_VENDOR_HTML', 'MAC_VENDOR_JS'];
+  const REQUIRED_INDEX_SNIPPETS = [
+    '<script src="./ipv4-utils.js"></script>',
+    'IPv4 Address Analyzer',
+    'IPv4 Range to Prefix Converter',
+    'IPv4 Subnet Calculator',
+    'data-tab="mac-vendor"',
+    'id="toggleDarkModeBtn"',
+    'id="analyzer"',
+    'id="range"',
+    'id="subnet"',
+    'id="mac-vendor"',
+    'id="macInput"',
+    'id="randomMacBtn"',
+    'id="formatsList"',
+    'function runFormatterOnly()'
+  ];
+  const REQUIRED_OUTPUT_SNIPPETS = ['<!DOCTYPE html>', 'IPv4 Address Analyzer', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'data-tab="mac-vendor"'];
+  const FORBIDDEN_RUNTIME_REFS = [/<script\b[^>]*\bsrc=/i, /<link\b[^>]*\brel=["']stylesheet["']/i, /<link\b[^>]*\brel=["']manifest["']/i];
+  const FORBIDDEN_LOCAL_FETCHES = [/fetch\(\s*["'`]\.\//, /fetch\(\s*new Request\(\s*["'`]\.\//];
 
   function assertSource(sources, name) {
     if (!sources || typeof sources[name] !== 'string') throw new Error(`Missing source file: ${name}`);
     return sources[name];
   }
+  function failIncompatible(reason) { throw new Error(`${INCOMPATIBLE_INDEX_MESSAGE} (${reason})`); }
   function escapeScriptJson(json) {
     return json.replace(/</g, '\\u003C').replace(/>/g, '\\u003E').replace(/&/g, '\\u0026').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
   }
@@ -22,6 +44,13 @@
     if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KiB`;
     return `${(n / 1024 / 1024).toFixed(2)} MiB`;
   }
+  function count(text, needle) { return (text.match(new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length; }
+  function assertContains(text, snippets, label) {
+    snippets.forEach((snippet) => { if (!text.includes(snippet)) throw new Error(`${label} is missing required content: ${snippet}`); });
+  }
+  function assertNotContains(text, snippets, label) {
+    snippets.forEach((snippet) => { if (text.includes(snippet)) throw new Error(`${label} contains forbidden content: ${snippet}`); });
+  }
   function stripMarked(text, marker) {
     const htmlPattern = new RegExp(`\\s*<!-- ${marker}_START -->[\\s\\S]*?<!-- ${marker}_END -->`, 'g');
     const jsPattern = new RegExp(`\\s*/\\* ${marker}_START \\*/[\\s\\S]*?/\\* ${marker}_END \\*/`, 'g');
@@ -31,13 +60,30 @@
     return text.replace(new RegExp(`\\s*(?:<!-- ${marker}_(?:START|END) -->|/\\* ${marker}_(?:START|END) \\*/)`, 'g'), '');
   }
   function replaceFirstJsMarked(text, marker, replacement) {
-    return text.replace(new RegExp(`/\\* ${marker}_START \\*/[\\s\\S]*?/\\* ${marker}_END \\*/`), replacement);
+    const pattern = new RegExp(`/\\* ${marker}_START \\*/[\\s\\S]*?/\\* ${marker}_END \\*/`);
+    if (!pattern.test(text)) failIncompatible(`missing ${marker} block`);
+    return text.replace(pattern, replacement);
+  }
+  function validateIndexSource(indexHtml) {
+    if (typeof indexHtml !== 'string' || !indexHtml.trim()) failIncompatible('empty index.html');
+    MAC_MARKERS.forEach((marker) => {
+      const starts = count(indexHtml, `${marker}_START`);
+      const ends = count(indexHtml, `${marker}_END`);
+      if (!starts || !ends) failIncompatible(`missing ${marker} markers`);
+      if (starts !== ends) failIncompatible(`unbalanced ${marker} markers`);
+    });
+    const ouiStarts = count(indexHtml, 'OUI_LOADER_JS_START');
+    const ouiEnds = count(indexHtml, 'OUI_LOADER_JS_END');
+    if (ouiStarts !== 1 || ouiEnds !== 1) failIncompatible('missing or unbalanced OUI loader markers');
+    REQUIRED_INDEX_SNIPPETS.forEach((snippet) => { if (!indexHtml.includes(snippet)) failIncompatible(`missing ${snippet}`); });
+    return true;
   }
   function removeExternalReferences(html) {
     return html
-      .replace(/\s*<link\s+rel="manifest"[^>]*>\s*/gi, '\n')
-      .replace(/\s*<link\s+rel="(?:icon|apple-touch-icon)"[^>]*>\s*/gi, '\n')
-      .replace(/\s*<script\s+src="\.\/ipv4-utils\.js"><\/script>\s*/i, '\n');
+      .replace(/\s*<link\b[^>]*\brel=["']manifest["'][^>]*>\s*/gi, '\n')
+      .replace(/\s*<link\b[^>]*\brel=["'](?:icon|apple-touch-icon)["'][^>]*>\s*/gi, '\n')
+      .replace(/\s*<link\b[^>]*\brel=["']stylesheet["'][^>]*>\s*/gi, '\n')
+      .replace(/\s*<script\b[^>]*\bsrc=["'][^"']+["'][^>]*><\/script>\s*/gi, '\n');
   }
   function inlineAssets(html, sources) {
     const css = `<style data-standalone-source="theme-overrides.css">\n${assertSource(sources, 'theme-overrides.css')}\n</style>\n<style data-standalone-source="range-controls.css">\n${assertSource(sources, 'range-controls.css')}\n</style>`;
@@ -52,40 +98,84 @@
     return html.replace(/\n\s*if \('serviceWorker'[\s\S]*?\n\s*}\s*(?=\n\s*<\/script>)/, '\n    console.log(\'Standalone HTML: service worker disabled.\');');
   }
   function embeddedOuiLoader(ouiJson) {
-    return `let ouiDb = null;\n    let ouiDbLoadState = 'not loaded';\n\n    async function loadOuiDb() {\n      if (ouiDb) return ouiDb;\n      const embedded = document.getElementById('embedded-oui-db');\n      if (!embedded) throw new Error('Embedded OUI database is missing.');\n      ouiDb = JSON.parse(embedded.textContent);\n      ouiDbLoadState = ouiDb.generatedAt ? \`loaded, generated \${ouiDb.generatedAt}\` : 'loaded from embedded database';\n      return ouiDb;\n    }`;
+    return `/* OUI_LOADER_JS_START */\n    async function loadOuiDb() {\n      if (ouiDb) return ouiDb;\n      const embedded = document.getElementById('embedded-oui-db');\n      if (!embedded) throw new Error('Embedded OUI database is missing.');\n      ouiDb = JSON.parse(embedded.textContent);\n      ouiDbLoadState = ouiDb.generatedAt ? \`loaded, generated \${ouiDb.generatedAt}\` : 'loaded from embedded database';\n      return ouiDb;\n    }\n    /* OUI_LOADER_JS_END */`;
   }
   function liteRunLookupAlias(html) {
     return html.replace(/runLookup\(\)/g, 'runFormatterOnly()').replace(/runLookup/g, 'runFormatterOnly');
+  }
+  function assertNoExternalRuntime(html) {
+    FORBIDDEN_RUNTIME_REFS.forEach((pattern) => { if (pattern.test(html)) throw new Error(`Standalone output contains external runtime reference: ${pattern}`); });
+  }
+  function assertNoLocalFetch(html) {
+    FORBIDDEN_LOCAL_FETCHES.forEach((pattern) => { if (pattern.test(html)) throw new Error(`Standalone output contains local fetch call: ${pattern}`); });
+  }
+  function assertNoMarkers(html) {
+    ['MAC_VENDOR_HTML_START', 'MAC_VENDOR_HTML_END', 'MAC_VENDOR_JS_START', 'MAC_VENDOR_JS_END', 'OUI_LOADER_JS_START', 'OUI_LOADER_JS_END'].forEach((marker) => {
+      if (html.includes(marker)) throw new Error(`Standalone output contains builder marker: ${marker}`);
+    });
+  }
+  function getInlineScripts(html) {
+    return [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+      .filter((match) => !/type=["']application\/json["']/i.test(match[1]))
+      .map((match) => match[2]);
+  }
+  function validateInlineScripts(html, compiler) {
+    const compile = compiler || ((code) => { Function(code); });
+    getInlineScripts(html).forEach((scriptText, index) => {
+      try { compile(scriptText, index); }
+      catch (error) { throw new Error(`Inline script ${index + 1} is invalid: ${error.message}`); }
+    });
+  }
+  function validateStandaloneOutput(html, variant, options) {
+    if (variant !== 'full' && variant !== 'lite') throw new Error('variant must be full or lite');
+    assertContains(html, REQUIRED_OUTPUT_SNIPPETS, `${variant} standalone`);
+    assertNoExternalRuntime(html);
+    assertNoLocalFetch(html);
+    assertNoMarkers(html);
+    if (html.includes('navigator.serviceWorker.register')) throw new Error(`${variant} standalone registers a service worker`);
+    validateInlineScripts(html, options && options.compileScript);
+    if (variant === 'full') {
+      assertContains(html, ['embedded-oui-db', 'function lookupVendor', 'Random vendor MAC', 'Vendor', 'Matched prefix', 'Assignment type'], 'Full standalone');
+    } else {
+      assertContains(html, ['function runFormatterOnly', 'Copy formats', 'Random MAC', 'Unicast', 'Multicast / group address', 'Globally administered'], 'Lite standalone');
+      assertNotContains(html, ["fetch('./oui-db.json'", 'loadOuiDb', 'lookupVendor', 'embedded-oui-db', 'Random vendor MAC', 'Vendor', 'Matched prefix', 'Assignment type', 'OUI database', 'Vendor not found'], 'Lite standalone');
+      if (/const\s+response\s*=\s*await\s*(?:[;\n\r]|$)/.test(html)) throw new Error('Lite standalone contains a dangling await expression');
+    }
+    return true;
   }
   function buildStandalone(sources, options) {
     const variant = options && options.variant;
     if (variant !== 'full' && variant !== 'lite') throw new Error('variant must be full or lite');
     let html = assertSource(sources, 'index.html');
+    validateIndexSource(html);
     html = removeExternalReferences(html);
     html = inlineAssets(html, sources);
+    html = removeExternalReferences(html);
     html = removeServiceWorker(html);
     html = html.replace(/<html lang="en">/, '<html lang="en" data-standalone="true">');
     html = html.replace(/<title>.*?<\/title>/, `<title>IP Calculator Standalone ${variant === 'full' ? 'Full' : 'Lite'}</title>`);
     if (variant === 'full') {
       const ouiJson = assertSource(sources, 'oui-db.json');
-      html = html.replace(/let ouiDb = null;[\s\S]*?async function loadOuiDb\(\) \{[\s\S]*?return ouiDb;\n    \}/, embeddedOuiLoader(ouiJson));
+      html = replaceFirstJsMarked(html, 'OUI_LOADER_JS', embeddedOuiLoader(ouiJson));
+      html = unmark(html, 'OUI_LOADER_JS');
       html = unmark(html, 'MAC_VENDOR_JS');
       html = unmark(html, 'MAC_VENDOR_HTML');
       html = html.replace('</body>', `<script type="application/json" id="embedded-oui-db">${escapeScriptJson(ouiJson)}</script>\n</body>`);
     } else {
       html = stripMarked(html, 'MAC_VENDOR_HTML');
       html = stripMarked(html, 'MAC_VENDOR_JS');
+      html = stripMarked(html, 'OUI_LOADER_JS');
       html = liteRunLookupAlias(html);
       html = html.replace(/MAC Vendor tab/g, 'MAC tab').replace(/Tab Content: MAC Vendor \/ Formats/g, 'Tab Content: MAC Formats');
       html = html.replace(/<span data-standalone-mac-tab-title>MAC Vendor \/ Formats<\/span>/g, '<span data-standalone-mac-tab-title>MAC Formats</span>');
       html = html.replace(/<span data-standalone-mac-heading>MAC Vendor \/ Formats<\/span>/g, '<span data-standalone-mac-heading>MAC Formats</span>');
       html = html.replace(/<span data-standalone-mac-description>[\s\S]*?<\/span>/, '<span data-standalone-mac-description>Format MAC addresses locally and show bit-based MAC flags. Manufacturer lookup is not included in the Lite standalone version.</span>');
     }
-    html = html.replace(/fetch\('\.\/oui-db\.json'[\s\S]*?\);?/g, '');
+    validateStandaloneOutput(html, variant, options);
     return html;
   }
-  function buildFull(sources) { return buildStandalone(sources, { variant: 'full' }); }
-  function buildLite(sources) { return buildStandalone(sources, { variant: 'lite' }); }
+  function buildFull(sources, options) { return buildStandalone(sources, Object.assign({}, options, { variant: 'full' })); }
+  function buildLite(sources, options) { return buildStandalone(sources, Object.assign({}, options, { variant: 'lite' })); }
   function summarize(sources) {
     const result = { generatedAt: null, fullSize: null, liteSize: null };
     if (sources && sources['oui-db.json']) { try { result.generatedAt = JSON.parse(sources['oui-db.json']).generatedAt || null; } catch (_) {} }
@@ -93,5 +183,5 @@
     try { result.fullSize = bytes(buildFull(sources)); } catch (_) {}
     return result;
   }
-  return { SOURCE_FILES, FULL_FILENAME, LITE_FILENAME, buildStandalone, buildFull, buildLite, summarize, formatBytes, bytes, escapeScriptJson };
+  return { SOURCE_FILES, FULL_FILENAME, LITE_FILENAME, INCOMPATIBLE_INDEX_MESSAGE, buildStandalone, buildFull, buildLite, summarize, formatBytes, bytes, escapeScriptJson, validateIndexSource, validateStandaloneOutput, getInlineScripts };
 });

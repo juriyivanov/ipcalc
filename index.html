@@ -658,6 +658,7 @@
     let ouiDb = null;
     let ouiDbLoadState = 'not loaded';
 
+    /* OUI_LOADER_JS_START */
     async function loadOuiDb() {
       if (ouiDb) return ouiDb;
       try {
@@ -672,6 +673,7 @@
       }
       return ouiDb;
     }
+    /* OUI_LOADER_JS_END */
 
     /* MAC_VENDOR_JS_END */
 
