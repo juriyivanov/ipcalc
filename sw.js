@@ -1,6 +1,7 @@
-const CACHE_NAME = 'ipcalc-pwa-v5';
+const CACHE_NAME = 'ipcalc-pwa-v6';
 const OUI_DB_PATH = '/ipcalc/oui-db.json';
 const THEME_STYLESHEET = './theme-overrides.css';
+const UI_ENHANCEMENTS = './ui-enhancements.js';
 
 const PRECACHE_URLS = [
   './',
@@ -10,7 +11,8 @@ const PRECACHE_URLS = [
   './icon.svg',
   './icon-192.svg',
   './icon-512.svg',
-  THEME_STYLESHEET
+  THEME_STYLESHEET,
+  UI_ENHANCEMENTS
 ];
 
 self.addEventListener('install', (event) => {
@@ -63,24 +65,26 @@ async function withUnifiedTheme(response) {
   const contentType = response.headers.get('content-type') || '';
   if (!contentType.includes('text/html')) return response;
 
-  const html = await response.text();
-  if (html.includes('theme-overrides.css')) {
-    return new Response(html, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers
-    });
+  let html = await response.text();
+  const stylesheetTag = '<link rel="stylesheet" href="./theme-overrides.css">';
+  const scriptTag = '<script src="./ui-enhancements.js" defer></script>';
+
+  if (!html.includes('theme-overrides.css')) {
+    html = html.includes('</head>')
+      ? html.replace('</head>', `  ${stylesheetTag}\n</head>`)
+      : `${stylesheetTag}\n${html}`;
   }
 
-  const linkTag = '<link rel="stylesheet" href="./theme-overrides.css">';
-  const themedHtml = html.includes('</head>')
-    ? html.replace('</head>', `  ${linkTag}\n</head>`)
-    : `${linkTag}\n${html}`;
+  if (!html.includes('ui-enhancements.js')) {
+    html = html.includes('</body>')
+      ? html.replace('</body>', `  ${scriptTag}\n</body>`)
+      : `${html}\n${scriptTag}`;
+  }
 
   const headers = new Headers(response.headers);
   headers.delete('content-length');
 
-  return new Response(themedHtml, {
+  return new Response(html, {
     status: response.status,
     statusText: response.statusText,
     headers
