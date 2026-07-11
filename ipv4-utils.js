@@ -127,5 +127,36 @@
 
   function subnetCount(baseCidr, newCidr) { return 2 ** (newCidr - baseCidr); }
 
-  return { IPV4_MAX, IPV4_SIZE, SUBNET_RENDER_LIMIT, parseIPv4, ipv4ToInt, intToIPv4, parseCIDR, cidrToMask, maskToCIDR, parseMask, parseSubnet, parseIPv4WithPrefix, subnetSize, safeSubnetStep, rangeToSubnets, subnetCount };
+  function parseSubnetPrefix(input) {
+    const mask = parseSubnet(input);
+    return mask === null ? null : maskToCIDR(mask);
+  }
+
+  function calculationError(error, message) {
+    return { ok: false, error, message };
+  }
+
+  function prepareSubnetCalculation(baseNetworkInput, baseSubnetInput, newSubnetInput) {
+    const baseIp = parseIPv4(baseNetworkInput);
+    if (baseIp === null) return calculationError('invalid-base-ip', 'Invalid base network');
+
+    const baseCidr = parseSubnetPrefix(baseSubnetInput);
+    if (baseCidr === null) return calculationError('invalid-base-cidr', 'Invalid original CIDR');
+
+    const newCidr = parseSubnetPrefix(newSubnetInput);
+    if (newCidr === null) return calculationError('invalid-new-cidr', 'Invalid new CIDR');
+
+    if (newCidr < baseCidr) {
+      return calculationError('new-cidr-too-small', 'New CIDR must be greater than or equal to base CIDR');
+    }
+
+    const baseMask = cidrToMask(baseCidr);
+    const network = (baseIp & baseMask) >>> 0;
+    const totalSubnets = subnetCount(baseCidr, newCidr);
+    const visibleSubnets = Math.min(totalSubnets, SUBNET_RENDER_LIMIT);
+
+    return { ok: true, network, baseCidr, newCidr, totalSubnets, visibleSubnets };
+  }
+
+  return { IPV4_MAX, IPV4_SIZE, SUBNET_RENDER_LIMIT, parseIPv4, ipv4ToInt, intToIPv4, parseCIDR, cidrToMask, maskToCIDR, parseMask, parseSubnet, parseIPv4WithPrefix, subnetSize, safeSubnetStep, rangeToSubnets, subnetCount, prepareSubnetCalculation };
 });

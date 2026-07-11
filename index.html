@@ -380,7 +380,7 @@
     /***************************************************
      * General IP Utilities
      **************************************************/
-    const { IPV4_MAX, SUBNET_RENDER_LIMIT, parseIPv4, intToIPv4, parseCIDR, cidrToMask, maskToCIDR, parseSubnet, parseIPv4WithPrefix, safeSubnetStep, rangeToSubnets, subnetCount } = window.IPv4Utils;
+    const { IPV4_MAX, SUBNET_RENDER_LIMIT, parseIPv4, intToIPv4, parseCIDR, cidrToMask, maskToCIDR, parseSubnet, parseIPv4WithPrefix, safeSubnetStep, rangeToSubnets, prepareSubnetCalculation } = window.IPv4Utils;
     const ipToInt = parseIPv4;
     const intToIp = intToIPv4;
 
@@ -586,52 +586,38 @@
     function calcSubnets() {
       subnetTableBody.innerHTML = '';
       subnetResults.style.display = 'none';
+      subnetLimitWarning.style.display = 'none';
+      subnetLimitWarning.textContent = '';
 
-      const netInt = ipToInt(baseNetworkInput.value.trim());
-      if (netInt === null) {
-        alert('Invalid base network');
+      const calculation = prepareSubnetCalculation(
+        baseNetworkInput.value,
+        baseCIDRInput.value,
+        newCIDRInput.value
+      );
+      if (!calculation.ok) {
+        alert(calculation.message);
         return;
       }
-      let baseMask = parseSubnet(baseCIDRInput.value.trim());
-      if (baseMask === null) {
-        alert('Invalid original CIDR');
-        return;
-      }
-      const baseCidr = maskToCIDR(baseMask);
-      let newCidr;
-      if (newCIDRInput.value.trim().startsWith('/')) {
-        newCidr = parseCIDR(newCIDRInput.value.trim());
-      } else {
-        const newMask = parseSubnet(newCIDRInput.value.trim());
-        if (newMask === null) {
-          alert('Invalid new CIDR');
-          return;
-        }
-        newCidr = maskToCIDR(newMask);
-      }
-      if (newCidr < baseCidr) {
-        alert('New CIDR must be greater than or equal to base CIDR');
-        return;
-      }
-      const totalSubnets = subnetCount(baseCidr, newCidr);
-      const visibleSubnets = Math.min(totalSubnets, SUBNET_RENDER_LIMIT);
-      subnetLimitWarning.style.display = totalSubnets > SUBNET_RENDER_LIMIT ? 'block' : 'none';
-      subnetLimitWarning.textContent = totalSubnets > SUBNET_RENDER_LIMIT
-        ? `The calculation contains ${totalSubnets.toLocaleString()} subnets. Showing the first ${visibleSubnets.toLocaleString()} entries.`
+
+      subnetLimitWarning.style.display = calculation.totalSubnets > SUBNET_RENDER_LIMIT ? 'block' : 'none';
+      subnetLimitWarning.textContent = calculation.totalSubnets > SUBNET_RENDER_LIMIT
+        ? `The calculation contains ${calculation.totalSubnets.toLocaleString()} subnets. Showing the first ${calculation.visibleSubnets.toLocaleString()} entries.`
         : '';
-      let current = (netInt & baseMask) >>> 0;
-      for (let i = 0; i < visibleSubnets; i++) {
-        const offset = i * Math.pow(2, 32 - newCidr);
-        const subNetwork = current + offset;
+
+      const fragment = document.createDocumentFragment();
+      for (let i = 0; i < calculation.visibleSubnets; i++) {
+        const offset = i * Math.pow(2, 32 - calculation.newCidr);
+        const subNetwork = calculation.network + offset;
         const row = document.createElement('tr');
         const netCell = document.createElement('td');
         const maskCell = document.createElement('td');
-        netCell.textContent = intToIp(subNetwork) + '/' + newCidr;
-        maskCell.textContent = intToIp(cidrToMask(newCidr));
+        netCell.textContent = intToIp(subNetwork) + '/' + calculation.newCidr;
+        maskCell.textContent = intToIp(cidrToMask(calculation.newCidr));
         row.appendChild(netCell);
         row.appendChild(maskCell);
-        subnetTableBody.appendChild(row);
+        fragment.appendChild(row);
       }
+      subnetTableBody.appendChild(fragment);
       subnetResults.style.display = 'block';
     }
 

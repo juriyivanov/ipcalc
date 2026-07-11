@@ -18,5 +18,7 @@ jobs:
           node --check ipv4-utils.js
           node --check range-controls.js
           node --check sw.js
+          node --check tools/check-index-inline-js.js
+          node tools/check-index-inline-js.js
       - name: Run tests
         run: node --test

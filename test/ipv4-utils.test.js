@@ -2,6 +2,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const ip = require('../ipv4-utils.js');
 
+const { readFileSync } = require('node:fs');
+const { join } = require('node:path');
+
 const toCidr = (start, end) => ip.rangeToSubnets(ip.parseIPv4(start), ip.parseIPv4(end)).map((s) => `${ip.intToIPv4(s.network)}/${s.prefix}`);
 
 test('strict IPv4 parser accepts only four complete decimal octets', () => {
@@ -66,4 +69,67 @@ test('subnet counts and display limiting are bounded', () => {
   assert.equal(ip.subnetCount(8, 32), 16777216);
   assert.equal(ip.SUBNET_RENDER_LIMIT, 4096);
   assert.equal(Math.min(ip.subnetCount(8, 32), ip.SUBNET_RENDER_LIMIT), 4096);
+});
+
+
+test('subnet calculation preparation validates and normalizes inputs', () => {
+  assert.deepEqual(ip.prepareSubnetCalculation('192.168.0.0', '/24', '/28'), {
+    ok: true,
+    network: ip.parseIPv4('192.168.0.0'),
+    baseCidr: 24,
+    newCidr: 28,
+    totalSubnets: 16,
+    visibleSubnets: 16
+  });
+  assert.deepEqual(ip.prepareSubnetCalculation('192.168.0.123', '/24', '/28'), {
+    ok: true,
+    network: ip.parseIPv4('192.168.0.0'),
+    baseCidr: 24,
+    newCidr: 28,
+    totalSubnets: 16,
+    visibleSubnets: 16
+  });
+  assert.deepEqual(ip.prepareSubnetCalculation('10.0.0.0', '/8', '/32'), {
+    ok: true,
+    network: ip.parseIPv4('10.0.0.0'),
+    baseCidr: 8,
+    newCidr: 32,
+    totalSubnets: 16777216,
+    visibleSubnets: ip.SUBNET_RENDER_LIMIT
+  });
+  assert.deepEqual(ip.prepareSubnetCalculation('0.0.0.0', '/0', '/32'), {
+    ok: true,
+    network: ip.parseIPv4('0.0.0.0'),
+    baseCidr: 0,
+    newCidr: 32,
+    totalSubnets: 4294967296,
+    visibleSubnets: ip.SUBNET_RENDER_LIMIT
+  });
+  assert.deepEqual(ip.prepareSubnetCalculation('192.168.0.0', '255.255.255.0', '255.255.255.240'), {
+    ok: true,
+    network: ip.parseIPv4('192.168.0.0'),
+    baseCidr: 24,
+    newCidr: 28,
+    totalSubnets: 16,
+    visibleSubnets: 16
+  });
+});
+
+test('subnet calculation preparation rejects invalid integrated inputs', () => {
+  assert.equal(ip.prepareSubnetCalculation('not-an-ip', '/24', '/28').error, 'invalid-base-ip');
+  assert.equal(ip.prepareSubnetCalculation('192.168.1.1abc', '/24', '/28').error, 'invalid-base-ip');
+  for (const value of ['/abc', '/24abc', '/33', '/-1', '/', '', '255.0.255.0']) {
+    const result = ip.prepareSubnetCalculation('192.168.0.0', '/24', value);
+    assert.equal(result.error, 'invalid-new-cidr', value);
+    assert.equal(result.message, 'Invalid new CIDR');
+  }
+  assert.equal(ip.prepareSubnetCalculation('192.168.0.0', '/0', '/abc').error, 'invalid-new-cidr');
+  assert.equal(ip.prepareSubnetCalculation('192.168.0.0', '/24', '/16').error, 'new-cidr-too-small');
+});
+
+test('index and service worker include shared IPv4 utilities', () => {
+  const indexHtml = readFileSync(join(__dirname, '..', 'index.html'), 'utf8');
+  const serviceWorker = readFileSync(join(__dirname, '..', 'sw.js'), 'utf8');
+  assert.match(indexHtml, /<script src="\.\/ipv4-utils\.js"><\/script>/);
+  assert.match(serviceWorker, /ipv4-utils\.js/);
 });
