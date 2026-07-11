@@ -1,5 +1,6 @@
-const CACHE_NAME = 'ipcalc-pwa-v4';
+const CACHE_NAME = 'ipcalc-pwa-v5';
 const OUI_DB_PATH = '/ipcalc/oui-db.json';
+const THEME_STYLESHEET = './theme-overrides.css';
 
 const PRECACHE_URLS = [
   './',
@@ -8,7 +9,8 @@ const PRECACHE_URLS = [
   './manifest.json',
   './icon.svg',
   './icon-192.svg',
-  './icon-512.svg'
+  './icon-512.svg',
+  THEME_STYLESHEET
 ];
 
 self.addEventListener('install', (event) => {
@@ -55,6 +57,55 @@ async function fetchOuiDbNetworkFirst(request) {
   }
 }
 
+async function withUnifiedTheme(response) {
+  if (!response || !response.ok) return response;
+
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('text/html')) return response;
+
+  const html = await response.text();
+  if (html.includes('theme-overrides.css')) {
+    return new Response(html, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers
+    });
+  }
+
+  const linkTag = '<link rel="stylesheet" href="./theme-overrides.css">';
+  const themedHtml = html.includes('</head>')
+    ? html.replace('</head>', `  ${linkTag}\n</head>`)
+    : `${linkTag}\n${html}`;
+
+  const headers = new Headers(response.headers);
+  headers.delete('content-length');
+
+  return new Response(themedHtml, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
+
+async function fetchDocumentNetworkFirst(request) {
+  const cache = await caches.open(CACHE_NAME);
+
+  try {
+    const networkResponse = await fetch(request);
+    const themedResponse = await withUnifiedTheme(networkResponse);
+    if (themedResponse && themedResponse.ok) {
+      await cache.put(request, themedResponse.clone());
+    }
+    return themedResponse;
+  } catch (error) {
+    const cachedResponse = await cache.match(request);
+    if (cachedResponse) return cachedResponse;
+
+    const fallback = await cache.match('./index.html');
+    return withUnifiedTheme(fallback);
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
@@ -66,18 +117,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-          return response;
-        })
-        .catch(() => caches.match(event.request).then((cachedResponse) => {
-          return cachedResponse || caches.match('./index.html');
-        }))
-    );
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+    event.respondWith(fetchDocumentNetworkFirst(event.request));
     return;
   }
 
