@@ -1,7 +1,8 @@
 (() => {
   'use strict';
   const Core = window.StandaloneBuilderCore;
-  const BUILD_REVISION = 'standalone-builder-v2';
+  // Bump this revision when builder/source markers change incompatibly; all files in one page session use the same value.
+  const BUILD_REVISION = 'standalone-builder-v3';
   const sourceStatus = document.getElementById('sourceStatus');
   const buildStatus = document.getElementById('buildStatus');
   const generationDate = document.getElementById('generationDate');
@@ -20,7 +21,7 @@
   function sourceUrl(file) { return new URL(file, window.location.href); }
   async function loadFromCache(canonicalUrl) {
     if (!('caches' in window)) return null;
-    const cached = await caches.match(canonicalUrl.href, { ignoreSearch: true });
+    const cached = await caches.match(Core.standaloneSourceCacheKey(canonicalUrl.href));
     return cached || null;
   }
   async function loadFile(file) {

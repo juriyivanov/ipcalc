@@ -33,6 +33,15 @@ const { full, lite } = buildAndValidate();
 
 hasAll(full, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'MAC Vendor / Formats', 'Copy formats', 'embedded-oui-db', 'Vendor', 'Matched prefix', 'Assignment type', 'Random vendor MAC', 'function lookupVendor']);
 noExternal(full);
+assert.strictEqual(count(full, 'id="embedded-oui-db"'), 1, 'Full must contain exactly one embedded OUI database');
+const embeddedIndex = full.indexOf('id="embedded-oui-db"');
+const initialLookupIndex = full.indexOf('loadOuiDb().then(runLookup)');
+const appScriptIndex = full.indexOf('/***************************************************');
+assert(embeddedIndex >= 0, 'embedded OUI database must exist');
+assert(initialLookupIndex >= 0, 'initial OUI lookup must exist');
+assert(appScriptIndex >= 0, 'application script marker must exist');
+assert(embeddedIndex < initialLookupIndex, 'embedded OUI database must appear before the initial lookup');
+assert(embeddedIndex < appScriptIndex, 'embedded OUI database must be parsed before application JavaScript');
 
 hasAll(lite, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'MAC Formats', 'Colon uppercase', 'Colon lowercase', 'Hyphen uppercase', 'Hyphen lowercase', 'Cisco dotted lowercase', 'Cisco dotted uppercase', 'Plain uppercase', 'Plain lowercase', 'Space separated', '0x-prefixed', 'Random MAC', 'Unicast', 'Multicast / group address', 'Broadcast', 'Globally administered', 'Locally administered / randomized possible', 'function runFormatterOnly']);
 hasNone(lite, ['Vendor', 'Matched prefix', 'Assignment type', 'Random vendor MAC', 'oui-db.json', 'embedded-oui-db', 'lookupVendor', 'loadOuiDb', 'Vendor not found', 'OUI database', 'bundled vendor database']);
@@ -81,5 +90,25 @@ const enhanced = buildAndValidate(enhancedSources);
   assert.strictEqual(count(html, 'data-standalone-source="range-controls.js"'), 1, 'range JS should be inlined once');
   checkScripts(html);
 });
+
+
+assert.strictEqual(
+  Core.standaloneSourceCacheKey('https://example.test/ipcalc/index.html?standalone-source=v3'),
+  'https://example.test/ipcalc/index.html'
+);
+assert.strictEqual(
+  Core.standaloneSourceCacheKey('https://example.test/ipcalc/index.html?foo=bar&standalone-source=v3'),
+  'https://example.test/ipcalc/index.html?foo=bar'
+);
+
+const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
+hasAll(sw, ["searchParams.has('standalone-source')", "searchParams.delete('standalone-source')", "cache:'no-store'", 'standaloneSourceNetworkFirst']);
+assert(sw.indexOf("searchParams.has('standalone-source')") < sw.indexOf('caches.match(e.request)'), 'standalone-source branch must run before cache-first runtime fallback');
+assert(sw.indexOf("searchParams.delete('standalone-source')") < sw.indexOf('cache.match(canonicalUrl.href)'), 'standalone-source must be removed before canonical fallback lookup');
+assert(!/c\.put\(e\.request[\s\S]{0,120}standalone-source/.test(sw), 'standalone-source query requests must not be cached');
+
+const builderJs = fs.readFileSync(path.join(root, 'standalone-builder.js'), 'utf8');
+hasAll(builderJs, ["const BUILD_REVISION = 'standalone-builder-v3'", "fetch(freshUrl, { cache: 'reload' })", 'Core.standaloneSourceCacheKey(canonicalUrl.href)']);
+hasNone(builderJs, ['ignoreSearch: true', 'force-cache']);
 
 console.log(`Full ${Core.formatBytes(Core.bytes(full))}; Lite ${Core.formatBytes(Core.bytes(lite))}`);

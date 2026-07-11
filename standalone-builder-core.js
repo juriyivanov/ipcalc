@@ -44,6 +44,11 @@
     if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KiB`;
     return `${(n / 1024 / 1024).toFixed(2)} MiB`;
   }
+  function standaloneSourceCacheKey(url) {
+    const canonicalUrl = new URL(String(url));
+    canonicalUrl.searchParams.delete('standalone-source');
+    return canonicalUrl.href;
+  }
   function count(text, needle) { return (text.match(new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length; }
   function assertContains(text, snippets, label) {
     snippets.forEach((snippet) => { if (!text.includes(snippet)) throw new Error(`${label} is missing required content: ${snippet}`); });
@@ -126,6 +131,21 @@
       catch (error) { throw new Error(`Inline script ${index + 1} is invalid: ${error.message}`); }
     });
   }
+  function validateEmbeddedOuiOrder(html) {
+    const embeddedCount = count(html, 'id="embedded-oui-db"');
+    if (embeddedCount !== 1) throw new Error(`Full standalone must contain exactly one embedded OUI database; found ${embeddedCount}`);
+    const embeddedScriptIndex = html.indexOf('<script type="application/json" id="embedded-oui-db"');
+    if (embeddedScriptIndex < 0) throw new Error('Full standalone embedded OUI database must be an application/json script');
+    const appScriptIndex = html.indexOf('/***************************************************');
+    const firstLoadIndex = html.indexOf('loadOuiDb()');
+    const initialLookupIndex = html.indexOf('loadOuiDb().then(runLookup)');
+    if (appScriptIndex < 0) throw new Error('Full standalone application script was not found');
+    if (firstLoadIndex < 0) throw new Error('Full standalone loadOuiDb call was not found');
+    if (initialLookupIndex < 0) throw new Error('Full standalone initial OUI lookup was not found');
+    if (embeddedScriptIndex > appScriptIndex) throw new Error('Embedded OUI database must be parsed before application JavaScript');
+    if (embeddedScriptIndex > firstLoadIndex) throw new Error('Embedded OUI database must appear before the first loadOuiDb call');
+    if (embeddedScriptIndex > initialLookupIndex) throw new Error('Embedded OUI database must appear before the initial lookup');
+  }
   function validateStandaloneOutput(html, variant, options) {
     if (variant !== 'full' && variant !== 'lite') throw new Error('variant must be full or lite');
     assertContains(html, REQUIRED_OUTPUT_SNIPPETS, `${variant} standalone`);
@@ -136,6 +156,8 @@
     validateInlineScripts(html, options && options.compileScript);
     if (variant === 'full') {
       assertContains(html, ['embedded-oui-db', 'function lookupVendor', 'Random vendor MAC', 'Vendor', 'Matched prefix', 'Assignment type'], 'Full standalone');
+      assertNotContains(html, ['oui-db.json', "fetch('./oui-db.json'"], 'Full standalone');
+      validateEmbeddedOuiOrder(html);
     } else {
       assertContains(html, ['function runFormatterOnly', 'Copy formats', 'Random MAC', 'Unicast', 'Multicast / group address', 'Globally administered'], 'Lite standalone');
       assertNotContains(html, ["fetch('./oui-db.json'", 'loadOuiDb', 'lookupVendor', 'embedded-oui-db', 'Random vendor MAC', 'Vendor', 'Matched prefix', 'Assignment type', 'OUI database', 'Vendor not found'], 'Lite standalone');
@@ -160,7 +182,8 @@
       html = unmark(html, 'OUI_LOADER_JS');
       html = unmark(html, 'MAC_VENDOR_JS');
       html = unmark(html, 'MAC_VENDOR_HTML');
-      html = html.replace('</body>', `<script type="application/json" id="embedded-oui-db">${escapeScriptJson(ouiJson)}</script>\n</body>`);
+      const embeddedOuiScript = `<script type="application/json" id="embedded-oui-db">${escapeScriptJson(ouiJson)}</script>\n`;
+      html = html.replace('<script data-standalone-source="ipv4-utils.js">', () => `${embeddedOuiScript}<script data-standalone-source="ipv4-utils.js">`);
     } else {
       html = stripMarked(html, 'MAC_VENDOR_HTML');
       html = stripMarked(html, 'MAC_VENDOR_JS');
@@ -183,5 +206,5 @@
     try { result.fullSize = bytes(buildFull(sources)); } catch (_) {}
     return result;
   }
-  return { SOURCE_FILES, FULL_FILENAME, LITE_FILENAME, INCOMPATIBLE_INDEX_MESSAGE, buildStandalone, buildFull, buildLite, summarize, formatBytes, bytes, escapeScriptJson, validateIndexSource, validateStandaloneOutput, getInlineScripts };
+  return { SOURCE_FILES, FULL_FILENAME, LITE_FILENAME, INCOMPATIBLE_INDEX_MESSAGE, buildStandalone, buildFull, buildLite, summarize, formatBytes, bytes, escapeScriptJson, standaloneSourceCacheKey, validateIndexSource, validateStandaloneOutput, getInlineScripts };
 });
