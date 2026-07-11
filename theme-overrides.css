@@ -1,0 +1,214 @@
+/* Unified visual theme for IPv4 and MAC tools. */
+
+:root {
+  --app-output-bg: #eef5ff;
+  --app-output-row-bg: #ffffff;
+  --app-output-border: #c7d7ee;
+  --app-output-text: #1f2937;
+  --app-output-muted: #475569;
+  --app-input-bg: #ffffff;
+  --app-input-border: #b8c7dc;
+  --app-input-text: #1f2937;
+  --app-badge-bg: #e8f0ff;
+  --app-table-header-bg: #dceaff;
+  --app-shadow: 0 8px 22px rgba(30, 64, 175, 0.08);
+}
+
+body.dark-mode {
+  --app-output-bg: #3b3b3b;
+  --app-output-row-bg: #3f3f3f;
+  --app-output-border: #666666;
+  --app-output-text: #eeeeee;
+  --app-output-muted: #c7c7c7;
+  --app-input-bg: #555555;
+  --app-input-border: #666666;
+  --app-input-text: #eeeeee;
+  --app-badge-bg: #555555;
+  --app-table-header-bg: #4b4b4b;
+  --app-shadow: none;
+}
+
+input[type="text"],
+select,
+textarea {
+  background: var(--app-input-bg) !important;
+  border: 1px solid var(--app-input-border) !important;
+  color: var(--app-input-text) !important;
+  border-radius: 6px;
+}
+
+.results,
+.result-card {
+  margin-top: 15px;
+  padding: 14px !important;
+  border: 1px solid var(--app-output-border) !important;
+  background: var(--app-output-bg) !important;
+  color: var(--app-output-text) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--app-shadow);
+}
+
+.result-item { color: var(--app-output-text); }
+
+.key,
+.muted,
+.format-label { color: var(--app-output-muted) !important; }
+
+.value,
+.vendor-name,
+.format-value { color: var(--app-output-text) !important; }
+
+.format-row {
+  border: 1px solid var(--app-output-border) !important;
+  background: var(--app-output-row-bg) !important;
+  color: var(--app-output-text) !important;
+  border-radius: 8px;
+}
+
+table { color: var(--app-output-text); }
+table th {
+  background: var(--app-table-header-bg);
+  color: var(--app-output-text);
+}
+table th,
+table td { border-bottom: 1px solid var(--app-output-border) !important; }
+table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--app-output-row-bg) 75%, var(--app-output-bg));
+}
+
+.badge {
+  background: var(--app-badge-bg) !important;
+  border: 1px solid var(--app-output-border) !important;
+  color: var(--app-output-text) !important;
+}
+.badge.ok { border-color: #15803d !important; color: #166534 !important; }
+body.dark-mode .badge.ok { border-color: #166534 !important; color: #86efac !important; }
+.badge.warn { border-color: #b45309 !important; color: #92400e !important; }
+body.dark-mode .badge.warn { border-color: #92400e !important; color: #fbbf24 !important; }
+
+.tab-button.active { box-shadow: inset 0 -3px 0 #60a5fa; }
+
+#resultCard { padding: 10px 12px !important; }
+#resultCard .result-grid {
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 6px 12px;
+}
+#resultCard .key,
+#resultCard .value { line-height: 1.25; }
+
+.matched-prefix-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+.matched-prefix-line .badge-row {
+  display: inline-flex;
+  margin: 0;
+  gap: 6px;
+}
+.matched-prefix-line .badge {
+  padding: 2px 7px;
+  font-size: 0.82em;
+}
+
+#formatsCard { padding: 10px 12px !important; }
+.formats-table-card .formats { margin-top: 0; }
+.formats-table {
+  margin-top: 0;
+  table-layout: fixed;
+}
+.formats-table th:first-child,
+.formats-table td:first-child { width: 34%; }
+.formats-table th:last-child,
+.formats-table td:last-child {
+  width: 86px;
+  text-align: right;
+}
+.formats-table td {
+  padding: 7px 8px;
+  vertical-align: middle;
+}
+.formats-table .format-label { font-weight: 600; }
+.formats-table .format-value {
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.formats-table .copy-button { padding: 5px 9px; }
+
+.copy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  margin: 0 0 10px;
+}
+.copy-actions button { padding: 6px 10px; }
+
+@media (max-width: 640px) {
+  body { margin: 8px !important; }
+  .container { padding: 12px !important; }
+
+  .tabs {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    overflow: visible !important;
+    border-bottom: 0 !important;
+  }
+  .tab-button {
+    width: 100%;
+    min-width: 0;
+    padding: 9px 7px !important;
+    white-space: normal !important;
+    line-height: 1.2;
+    border: 1px solid var(--app-output-border) !important;
+    border-radius: 7px;
+  }
+  .tab-button.active {
+    border-bottom: 1px solid var(--app-output-border) !important;
+    box-shadow: inset 0 -3px 0 #60a5fa;
+  }
+
+  #resultCard .result-grid {
+    grid-template-columns: 105px minmax(0, 1fr);
+  }
+
+  .formats-table {
+    font-size: 0.95em;
+    table-layout: fixed;
+  }
+  .formats-table th:first-child,
+  .formats-table td:first-child {
+    display: none;
+  }
+  .formats-table th:nth-child(2),
+  .formats-table td:nth-child(2) {
+    width: auto;
+    padding-left: 4px;
+    font-size: 0.98em;
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+  .formats-table th:last-child,
+  .formats-table td:last-child {
+    width: 70px;
+    padding-right: 3px;
+  }
+  .formats-table .copy-button {
+    width: 100%;
+    padding: 6px 7px;
+  }
+
+  .copy-actions { justify-content: stretch; }
+  .copy-actions button { flex: 1 1 150px; }
+}
+
+@media (max-width: 390px) {
+  .tabs { grid-template-columns: 1fr; }
+  .tab-button { min-height: 38px; }
+}
+
+@supports not (background: color-mix(in srgb, white 50%, black)) {
+  table tbody tr:nth-child(even) { background: var(--app-output-row-bg); }
+}
