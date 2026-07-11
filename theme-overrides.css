@@ -1,0 +1,131 @@
+/* Unified visual theme for IPv4 and MAC tools. */
+
+:root {
+  --app-output-bg: #eef5ff;
+  --app-output-row-bg: #ffffff;
+  --app-output-border: #c7d7ee;
+  --app-output-text: #1f2937;
+  --app-output-muted: #475569;
+  --app-input-bg: #ffffff;
+  --app-input-border: #b8c7dc;
+  --app-input-text: #1f2937;
+  --app-badge-bg: #e8f0ff;
+  --app-table-header-bg: #dceaff;
+  --app-shadow: 0 8px 22px rgba(30, 64, 175, 0.08);
+}
+
+body.dark-mode {
+  --app-output-bg: #3b3b3b;
+  --app-output-row-bg: #3f3f3f;
+  --app-output-border: #666666;
+  --app-output-text: #eeeeee;
+  --app-output-muted: #c7c7c7;
+  --app-input-bg: #555555;
+  --app-input-border: #666666;
+  --app-input-text: #eeeeee;
+  --app-badge-bg: #555555;
+  --app-table-header-bg: #4b4b4b;
+  --app-shadow: none;
+}
+
+/* Inputs and ordinary controls share one palette. */
+input[type="text"],
+select,
+textarea {
+  background: var(--app-input-bg) !important;
+  border: 1px solid var(--app-input-border) !important;
+  color: var(--app-input-text) !important;
+  border-radius: 6px;
+}
+
+/* IPv4 output panels and MAC result cards intentionally use the same surface. */
+.results,
+.result-card {
+  margin-top: 15px;
+  padding: 14px !important;
+  border: 1px solid var(--app-output-border) !important;
+  background: var(--app-output-bg) !important;
+  color: var(--app-output-text) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--app-shadow);
+}
+
+.result-item {
+  color: var(--app-output-text);
+}
+
+.key,
+.muted,
+.format-label {
+  color: var(--app-output-muted) !important;
+}
+
+.value,
+.vendor-name,
+.format-value {
+  color: var(--app-output-text) !important;
+}
+
+/* Rows in the MAC formatter and rows in IPv4 tables use matching inner surfaces. */
+.format-row {
+  border: 1px solid var(--app-output-border) !important;
+  background: var(--app-output-row-bg) !important;
+  color: var(--app-output-text) !important;
+  border-radius: 8px;
+}
+
+table {
+  color: var(--app-output-text);
+}
+
+table th {
+  background: var(--app-table-header-bg);
+  color: var(--app-output-text);
+}
+
+table th,
+table td {
+  border-bottom: 1px solid var(--app-output-border) !important;
+}
+
+table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--app-output-row-bg) 75%, var(--app-output-bg));
+}
+
+/* Status badges remain readable in both themes. */
+.badge {
+  background: var(--app-badge-bg) !important;
+  border: 1px solid var(--app-output-border) !important;
+  color: var(--app-output-text) !important;
+}
+
+.badge.ok {
+  border-color: #15803d !important;
+  color: #166534 !important;
+}
+
+body.dark-mode .badge.ok {
+  border-color: #166534 !important;
+  color: #86efac !important;
+}
+
+.badge.warn {
+  border-color: #b45309 !important;
+  color: #92400e !important;
+}
+
+body.dark-mode .badge.warn {
+  border-color: #92400e !important;
+  color: #fbbf24 !important;
+}
+
+/* The active tab visually belongs to the same theme. */
+.tab-button.active {
+  box-shadow: inset 0 -3px 0 #60a5fa;
+}
+
+@supports not (background: color-mix(in srgb, white 50%, black)) {
+  table tbody tr:nth-child(even) {
+    background: var(--app-output-row-bg);
+  }
+}
