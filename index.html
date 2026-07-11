@@ -315,6 +315,7 @@
       </div>
       <button id="subnetCalcBtn">Calculate</button>
       <div class="results" id="subnetResults" style="display: none;">
+        <div id="subnetLimitWarning" class="result-item" style="display: none;"></div>
         <table id="subnetTable">
           <thead>
             <tr>
@@ -374,70 +375,14 @@
 
   </div> <!-- end container -->
 
+  <script src="./ipv4-utils.js"></script>
   <script>
     /***************************************************
      * General IP Utilities
      **************************************************/
-    function ipToInt(ipStr) {
-      const parts = ipStr.split('.');
-      if (parts.length !== 4) return null;
-      let num = 0;
-      for (let i = 0; i < 4; i++) {
-        const part = parseInt(parts[i]);
-        if (isNaN(part) || part < 0 || part > 255) return null;
-        num = (num << 8) + part;
-      }
-      return num >>> 0;
-    }
-
-    function intToIp(num) {
-      return [
-        (num >>> 24) & 0xff,
-        (num >>> 16) & 0xff,
-        (num >>> 8) & 0xff,
-        num & 0xff
-      ].join('.');
-    }
-
-    function isValidMask(mask) {
-      let foundZero = false;
-      for (let i = 31; i >= 0; i--) {
-        if (mask & (1 << i)) {
-          if (foundZero) return false;
-        } else {
-          foundZero = true;
-        }
-      }
-      return true;
-    }
-
-    function cidrToMask(cidr) {
-      if (cidr < 0 || cidr > 32) return null;
-      return cidr === 0 ? 0 : (~0 << (32 - cidr)) >>> 0;
-    }
-
-    function maskToCIDR(mask) {
-      let cidr = 0;
-      for (let i = 31; i >= 0; i--) {
-        if (mask & (1 << i)) cidr++;
-      }
-      return cidr;
-    }
-
-    // Global parseSubnet function
-    function parseSubnet(input) {
-      input = input.trim();
-      if (input.startsWith('/')) {
-        const cidr = parseInt(input.substring(1));
-        if (isNaN(cidr) || cidr < 0 || cidr > 32) return null;
-        return cidrToMask(cidr);
-      } else {
-        const maskInt = ipToInt(input);
-        if (maskInt === null) return null;
-        if (!isValidMask(maskInt)) return null;
-        return maskInt;
-      }
-    }
+    const { IPV4_MAX, SUBNET_RENDER_LIMIT, parseIPv4, intToIPv4, parseCIDR, cidrToMask, maskToCIDR, parseSubnet, parseIPv4WithPrefix, safeSubnetStep, rangeToSubnets, subnetCount } = window.IPv4Utils;
+    const ipToInt = parseIPv4;
+    const intToIp = intToIPv4;
 
     /***************************************************
      * 1) IPv4 Address Analyzer
@@ -473,8 +418,8 @@
       }
 
       const cidr = maskToCIDR(mask);
-      const network = ipInt & mask;
-      const broadcast = network | (~mask >>> 0);
+      const network = (ipInt & mask) >>> 0;
+      const broadcast = (network | (~mask >>> 0)) >>> 0;
       const total = (cidr === 32) ? 1 :
                     (cidr === 31) ? 2 :
                     Math.max(0, Math.pow(2, 32 - cidr) - 2);
@@ -497,10 +442,8 @@
       const mask = parseSubnet(subnetInput.value);
       if (ipInt === null || mask === null) return;
       const cidr = maskToCIDR(mask);
-      const currentNetwork = ipInt & mask;
-      const subnetSize = Math.pow(2, 32 - cidr);
-      const nextNetwork = currentNetwork + subnetSize;
-      let newIp = (cidr >= 31) ? nextNetwork : nextNetwork + 1;
+      const newIp = safeSubnetStep(ipInt, cidr, 1, cidr >= 31 ? 0 : 1);
+      if (newIp === null) return;
       ipInput.value = intToIp(newIp);
       calculateAnalyzer();
     }
@@ -510,10 +453,8 @@
       const mask = parseSubnet(subnetInput.value);
       if (ipInt === null || mask === null) return;
       const cidr = maskToCIDR(mask);
-      const currentNetwork = ipInt & mask;
-      const subnetSize = Math.pow(2, 32 - cidr);
-      const prevNetwork = currentNetwork - subnetSize;
-      let newIp = (cidr >= 31) ? prevNetwork : prevNetwork + 1;
+      const newIp = safeSubnetStep(ipInt, cidr, -1, cidr >= 31 ? 0 : 1);
+      if (newIp === null) return;
       ipInput.value = intToIp(newIp);
       calculateAnalyzer();
     }
@@ -522,11 +463,11 @@
       let input = subnetInput.value.trim();
       let cidr;
       if (input.startsWith('/')) {
-        cidr = parseInt(input.substring(1));
+        cidr = parseCIDR(input);
       } else {
         cidr = maskToCIDR(parseSubnet(input));
       }
-      if (isNaN(cidr)) return;
+      if (cidr === null) return;
       cidr += increment;
       if (cidr < 0) cidr = 0;
       if (cidr > 32) cidr = 32;
@@ -549,18 +490,6 @@
     const convertRangeBtn = document.getElementById('convertRangeBtn');
     const rangeResults    = document.getElementById('rangeResults');
     const rangeTableBody  = document.querySelector('#rangeTable tbody');
-
-    function rangeToSubnets(start, end) {
-      const subnets = [];
-      while (start <= end) {
-        let maxSize = 32 - Math.floor(Math.log2(start & -start));
-        let maxDiff = 32 - Math.floor(Math.log2(end - start + 1));
-        let prefix = Math.max(maxSize, maxDiff);
-        subnets.push({ network: start, prefix: prefix, mask: cidrToMask(prefix) });
-        start += Math.pow(2, 32 - prefix);
-      }
-      return subnets;
-    }
 
     function convertRange() {
       rangeTableBody.innerHTML = '';
@@ -603,6 +532,7 @@
     const subnetCalcBtn    = document.getElementById('subnetCalcBtn');
     const subnetResults    = document.getElementById('subnetResults');
     const subnetTableBody  = document.querySelector('#subnetTable tbody');
+    const subnetLimitWarning = document.getElementById('subnetLimitWarning');
 
     // New functions for Subnet Calculator inline controls:
     function jumpToNextBaseNetwork() {
@@ -610,9 +540,8 @@
       const mask = parseSubnet(baseCIDRInput.value.trim());
       if(netInt === null || mask === null) return;
       const cidr = maskToCIDR(mask);
-      const currentNetwork = netInt & mask;
-      const subnetSize = Math.pow(2, 32 - cidr);
-      const nextNetwork = currentNetwork + subnetSize;
+      const nextNetwork = safeSubnetStep(netInt, cidr, 1, 0);
+      if (nextNetwork === null) return;
       baseNetworkInput.value = intToIp(nextNetwork);
     }
     function jumpToPrevBaseNetwork() {
@@ -620,20 +549,19 @@
       const mask = parseSubnet(baseCIDRInput.value.trim());
       if(netInt === null || mask === null) return;
       const cidr = maskToCIDR(mask);
-      const currentNetwork = netInt & mask;
-      const subnetSize = Math.pow(2, 32 - cidr);
-      const prevNetwork = currentNetwork - subnetSize;
+      const prevNetwork = safeSubnetStep(netInt, cidr, -1, 0);
+      if (prevNetwork === null) return;
       baseNetworkInput.value = intToIp(prevNetwork);
     }
     function updateBaseCIDR(increment) {
       let input = baseCIDRInput.value.trim();
       let cidr;
       if(input.startsWith('/')) {
-        cidr = parseInt(input.substring(1));
+        cidr = parseCIDR(input);
       } else {
         cidr = maskToCIDR(parseSubnet(input));
       }
-      if(isNaN(cidr)) return;
+      if(cidr === null) return;
       cidr += increment;
       if(cidr < 0) cidr = 0;
       if(cidr > 32) cidr = 32;
@@ -643,11 +571,11 @@
       let input = newCIDRInput.value.trim();
       let cidr;
       if(input.startsWith('/')) {
-        cidr = parseInt(input.substring(1));
+        cidr = parseCIDR(input);
       } else {
         cidr = maskToCIDR(parseSubnet(input));
       }
-      if(isNaN(cidr)) return;
+      if(cidr === null) return;
       cidr += increment;
       if(cidr < 0) cidr = 0;
       if(cidr > 32) cidr = 32;
@@ -672,7 +600,7 @@
       const baseCidr = maskToCIDR(baseMask);
       let newCidr;
       if (newCIDRInput.value.trim().startsWith('/')) {
-        newCidr = parseInt(newCIDRInput.value.trim().substring(1));
+        newCidr = parseCIDR(newCIDRInput.value.trim());
       } else {
         const newMask = parseSubnet(newCIDRInput.value.trim());
         if (newMask === null) {
@@ -685,9 +613,14 @@
         alert('New CIDR must be greater than or equal to base CIDR');
         return;
       }
-      const subnetCount = Math.pow(2, newCidr - baseCidr);
-      let current = netInt & baseMask;
-      for (let i = 0; i < subnetCount; i++) {
+      const totalSubnets = subnetCount(baseCidr, newCidr);
+      const visibleSubnets = Math.min(totalSubnets, SUBNET_RENDER_LIMIT);
+      subnetLimitWarning.style.display = totalSubnets > SUBNET_RENDER_LIMIT ? 'block' : 'none';
+      subnetLimitWarning.textContent = totalSubnets > SUBNET_RENDER_LIMIT
+        ? `The calculation contains ${totalSubnets.toLocaleString()} subnets. Showing the first ${visibleSubnets.toLocaleString()} entries.`
+        : '';
+      let current = (netInt & baseMask) >>> 0;
+      for (let i = 0; i < visibleSubnets; i++) {
         const offset = i * Math.pow(2, 32 - newCidr);
         const subNetwork = current + offset;
         const row = document.createElement('tr');

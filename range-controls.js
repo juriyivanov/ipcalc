@@ -1,31 +1,22 @@
 (() => {
   'use strict';
 
+  const { parseIPv4, intToIPv4, parseIPv4WithPrefix, subnetSize, IPV4_MAX } = window.IPv4Utils;
+
   function ipToInt(ip) {
-    const parts = ip.split('.').map(Number);
-    if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return null;
-    return (((parts[0] << 24) >>> 0) + (parts[1] << 16) + (parts[2] << 8) + parts[3]) >>> 0;
+    return parseIPv4(ip);
   }
 
   function intToIp(value) {
-    return [value >>> 24, (value >>> 16) & 255, (value >>> 8) & 255, value & 255].join('.');
+    return intToIPv4(value);
   }
 
   function parseValue(value, fallbackPrefix = 24) {
-    const match = value.trim().match(/^([^/\s]+)(?:\/(\d{1,2}))?$/);
-    if (!match) return null;
-    const ip = ipToInt(match[1]);
-    const prefix = match[2] === undefined ? fallbackPrefix : Number(match[2]);
-    if (ip === null || prefix < 0 || prefix > 32) return null;
-    return { ip, prefix };
-  }
-
-  function subnetSize(prefix) {
-    return prefix === 0 ? 0x100000000 : 2 ** (32 - prefix);
+    return parseIPv4WithPrefix(value, fallbackPrefix);
   }
 
   function formatValue(ip, prefix) {
-    return `${intToIp(ip >>> 0)}/${prefix}`;
+    return `${intToIp(ip)}/${prefix}`;
   }
 
   function dispatchInput(input) {
@@ -44,7 +35,8 @@
       const step = subnetSize(prefix);
       const direction = action === 'ip-up' ? 1 : -1;
       const next = ip + direction * step;
-      ip = Math.min(0xffffffff, Math.max(0, next)) >>> 0;
+      if (next < 0 || next > IPV4_MAX) return;
+      ip = next >>> 0;
     }
 
     input.dataset.prefix = String(prefix);
