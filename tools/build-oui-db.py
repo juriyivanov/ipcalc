@@ -148,7 +148,7 @@ def build_from_ieee() -> Dict[str, Dict[str, str]]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description='Build offline OUI database for mac.html')
+    parser = argparse.ArgumentParser(description='Build offline OUI database for the IP Calculator MAC tools')
     parser.add_argument('-o', '--output', default='oui-db.json', help='Output JSON path')
     parser.add_argument('--force-download', action='store_true', help='Ignore local systemd hwdb and download vendor data')
     parser.add_argument('--ieee-only', action='store_true', help='Download IEEE assignment files instead of Wireshark manufacturer data')

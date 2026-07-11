@@ -1,6 +1,6 @@
-const CACHE_NAME='ipcalc-pwa-v10';
+const CACHE_NAME='ipcalc-pwa-v11';
 const OUI_DB_PATH='/ipcalc/oui-db.json';
-const ASSETS=['./','./index.html','./oui-db.json','./manifest.json','./icon.svg','./icon-192.svg','./icon-512.svg','./theme-overrides.css','./range-controls.css','./ipv4-utils.js','./ui-enhancements.js','./range-controls.js'];
+const ASSETS=['./','./index.html','./oui-db.json','./manifest.json','./icon.svg','./icon-192.svg','./icon-512.svg','./theme-overrides.css','./range-controls.css','./ipv4-utils.js','./ui-enhancements.js','./range-controls.js','./standalone-builder.html','./standalone-builder.js','./standalone-builder-core.js'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE_NAME).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
 
