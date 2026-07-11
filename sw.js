@@ -1,7 +1,9 @@
-const CACHE_NAME = 'ipcalc-pwa-v6';
+const CACHE_NAME = 'ipcalc-pwa-v7';
 const OUI_DB_PATH = '/ipcalc/oui-db.json';
 const THEME_STYLESHEET = './theme-overrides.css';
+const RANGE_STYLESHEET = './range-controls.css';
 const UI_ENHANCEMENTS = './ui-enhancements.js';
+const RANGE_CONTROLS = './range-controls.js';
 
 const PRECACHE_URLS = [
   './',
@@ -12,7 +14,9 @@ const PRECACHE_URLS = [
   './icon-192.svg',
   './icon-512.svg',
   THEME_STYLESHEET,
-  UI_ENHANCEMENTS
+  RANGE_STYLESHEET,
+  UI_ENHANCEMENTS,
+  RANGE_CONTROLS
 ];
 
 self.addEventListener('install', (event) => {
@@ -48,9 +52,7 @@ async function fetchOuiDbNetworkFirst(request) {
 
   try {
     const response = await fetch(networkRequest);
-    if (response && response.ok) {
-      await cache.put(request, response.clone());
-    }
+    if (response && response.ok) await cache.put(request, response.clone());
     return response;
   } catch (error) {
     const cachedResponse = await cache.match(request);
@@ -61,29 +63,26 @@ async function fetchOuiDbNetworkFirst(request) {
 
 async function withUnifiedTheme(response) {
   if (!response || !response.ok) return response;
-
   const contentType = response.headers.get('content-type') || '';
   if (!contentType.includes('text/html')) return response;
 
   let html = await response.text();
-  const stylesheetTag = '<link rel="stylesheet" href="./theme-overrides.css">';
-  const scriptTag = '<script src="./ui-enhancements.js" defer></script>';
+  const tags = [
+    ['theme-overrides.css', '<link rel="stylesheet" href="./theme-overrides.css">', '</head>'],
+    ['range-controls.css', '<link rel="stylesheet" href="./range-controls.css">', '</head>'],
+    ['ui-enhancements.js', '<script src="./ui-enhancements.js" defer></script>', '</body>'],
+    ['range-controls.js', '<script src="./range-controls.js" defer></script>', '</body>']
+  ];
 
-  if (!html.includes('theme-overrides.css')) {
-    html = html.includes('</head>')
-      ? html.replace('</head>', `  ${stylesheetTag}\n</head>`)
-      : `${stylesheetTag}\n${html}`;
-  }
-
-  if (!html.includes('ui-enhancements.js')) {
-    html = html.includes('</body>')
-      ? html.replace('</body>', `  ${scriptTag}\n</body>`)
-      : `${html}\n${scriptTag}`;
-  }
+  tags.forEach(([needle, tag, closingTag]) => {
+    if (html.includes(needle)) return;
+    html = html.includes(closingTag)
+      ? html.replace(closingTag, `  ${tag}\n${closingTag}`)
+      : `${html}\n${tag}`;
+  });
 
   const headers = new Headers(response.headers);
   headers.delete('content-length');
-
   return new Response(html, {
     status: response.status,
     statusText: response.statusText,
@@ -93,18 +92,14 @@ async function withUnifiedTheme(response) {
 
 async function fetchDocumentNetworkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
-
   try {
     const networkResponse = await fetch(request);
     const themedResponse = await withUnifiedTheme(networkResponse);
-    if (themedResponse && themedResponse.ok) {
-      await cache.put(request, themedResponse.clone());
-    }
+    if (themedResponse && themedResponse.ok) await cache.put(request, themedResponse.clone());
     return themedResponse;
   } catch (error) {
     const cachedResponse = await cache.match(request);
     if (cachedResponse) return cachedResponse;
-
     const fallback = await cache.match('./index.html');
     return withUnifiedTheme(fallback);
   }
@@ -112,7 +107,6 @@ async function fetchDocumentNetworkFirst(request) {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-
   const requestUrl = new URL(event.request.url);
   if (requestUrl.origin !== self.location.origin) return;
 
@@ -127,19 +121,14 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    caches.match(event.request)
-      .then((cachedResponse) => {
-        if (cachedResponse) return cachedResponse;
-
-        return fetch(event.request).then((response) => {
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-          return response;
-        });
-      })
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) return cachedResponse;
+      return fetch(event.request).then((response) => {
+        if (!response || response.status !== 200 || response.type !== 'basic') return response;
+        const responseClone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+        return response;
+      });
+    })
   );
 });
