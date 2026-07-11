@@ -1,0 +1,115 @@
+(() => {
+  'use strict';
+
+  function ipToInt(ip) {
+    const parts = ip.split('.').map(Number);
+    if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return null;
+    return (((parts[0] << 24) >>> 0) + (parts[1] << 16) + (parts[2] << 8) + parts[3]) >>> 0;
+  }
+
+  function intToIp(value) {
+    return [value >>> 24, (value >>> 16) & 255, (value >>> 8) & 255, value & 255].join('.');
+  }
+
+  function parseValue(value, fallbackPrefix = 24) {
+    const match = value.trim().match(/^([^/\s]+)(?:\/(\d{1,2}))?$/);
+    if (!match) return null;
+    const ip = ipToInt(match[1]);
+    const prefix = match[2] === undefined ? fallbackPrefix : Number(match[2]);
+    if (ip === null || prefix < 0 || prefix > 32) return null;
+    return { ip, prefix };
+  }
+
+  function subnetSize(prefix) {
+    return prefix === 0 ? 0x100000000 : 2 ** (32 - prefix);
+  }
+
+  function formatValue(ip, prefix) {
+    return `${intToIp(ip >>> 0)}/${prefix}`;
+  }
+
+  function dispatchInput(input) {
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function changeValue(input, action) {
+    const parsed = parseValue(input.value, Number(input.dataset.prefix || 24));
+    if (!parsed) return;
+
+    let { ip, prefix } = parsed;
+    if (action === 'prefix-down') prefix = Math.max(0, prefix - 1);
+    if (action === 'prefix-up') prefix = Math.min(32, prefix + 1);
+
+    if (action === 'ip-down' || action === 'ip-up') {
+      const step = subnetSize(prefix);
+      const direction = action === 'ip-up' ? 1 : -1;
+      const next = ip + direction * step;
+      ip = Math.min(0xffffffff, Math.max(0, next)) >>> 0;
+    }
+
+    input.dataset.prefix = String(prefix);
+    input.value = formatValue(ip, prefix);
+    dispatchInput(input);
+  }
+
+  function createButton(text, title, action, input) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = text;
+    button.title = title;
+    button.className = 'range-step-button';
+    button.addEventListener('click', () => changeValue(input, action));
+    return button;
+  }
+
+  function enhanceInput(id, defaultValue) {
+    const input = document.getElementById(id);
+    if (!input || input.closest('.range-input-group')) return;
+
+    const parsed = parseValue(input.value || defaultValue, 24) || parseValue(defaultValue, 24);
+    input.value = formatValue(parsed.ip, parsed.prefix);
+    input.dataset.prefix = String(parsed.prefix);
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'range-input-group';
+    const controls = document.createElement('div');
+    controls.className = 'range-step-buttons';
+    controls.append(
+      createButton('IP−', 'Previous subnet using current prefix', 'ip-down', input),
+      createButton('IP+', 'Next subnet using current prefix', 'ip-up', input),
+      createButton('/−', 'Decrease prefix length', 'prefix-down', input),
+      createButton('/+', 'Increase prefix length', 'prefix-up', input)
+    );
+
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.append(input, controls);
+  }
+
+  function makeConverterPrefixAware() {
+    const button = document.getElementById('convertRangeBtn');
+    const startInput = document.getElementById('rangeStart');
+    const endInput = document.getElementById('rangeEnd');
+    if (!button || !startInput || !endInput || button.dataset.prefixAware) return;
+
+    button.dataset.prefixAware = 'true';
+    button.addEventListener('click', () => {
+      const start = parseValue(startInput.value, Number(startInput.dataset.prefix || 24));
+      const end = parseValue(endInput.value, Number(endInput.dataset.prefix || 24));
+      if (!start || !end) return;
+
+      const originalStart = startInput.value;
+      const originalEnd = endInput.value;
+      startInput.value = intToIp(start.ip);
+      endInput.value = intToIp(end.ip);
+
+      setTimeout(() => {
+        startInput.value = originalStart;
+        endInput.value = originalEnd;
+      }, 0);
+    }, true);
+  }
+
+  enhanceInput('rangeStart', '192.168.100.0/24');
+  enhanceInput('rangeEnd', '192.168.100.255/24');
+  makeConverterPrefixAware();
+})();
