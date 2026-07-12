@@ -1,17 +1,11 @@
-const { readFileSync, writeFileSync, mkdtempSync } = require('node:fs');
-const { tmpdir } = require('node:os');
-const { join } = require('node:path');
-const { execFileSync } = require('node:child_process');
+const fs = require('fs');
+const vm = require('vm');
 
-const html = readFileSync('index.html', 'utf8');
-const scripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)];
-if (scripts.length === 0) {
-  throw new Error('No inline scripts found in index.html');
-}
-const dir = mkdtempSync(join(tmpdir(), 'ipcalc-inline-'));
-scripts.forEach((match, index) => {
-  const path = join(dir, `index-inline-${index + 1}.js`);
-  writeFileSync(path, match[1]);
-  execFileSync(process.execPath, ['--check', path], { stdio: 'inherit' });
-});
-console.log(`Checked ${scripts.length} inline script(s) from index.html`);
+const html = fs.readFileSync('index.html', 'utf8');
+const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+  .filter((match) => !/\bsrc=/i.test(match[1]) && !/type=["']application\/json["']/i.test(match[1]))
+  .map((match) => match[2].trim())
+  .filter(Boolean);
+
+scripts.forEach((script, index) => new vm.Script(script, { filename: `index-inline-${index + 1}.js` }));
+console.log(scripts.length ? `Checked ${scripts.length} inline script(s) from index.html` : 'No executable inline scripts in index.html');

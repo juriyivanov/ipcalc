@@ -107,19 +107,16 @@ Builder загружает текущие исходники с того же or
 ```text
 .
 ├── index.html                         # Основная PWA: IPv4-инструменты, MAC Vendor / Formats и навигация
+├── app.css                            # Канонические стили приложения
+├── app.js                             # Канонический UI runtime приложения
 ├── ipv4-utils.js                      # Общие IPv4-утилиты, строгий разбор и тестируемые расчеты
 ├── cidr-set-utils.js                  # CIDR set операции и генератор конфигураций
-├── list-export-ui.js                  # Переиспользуемая панель экспорта списков сетей
 ├── manifest.json                      # PWA manifest
 ├── sw.js                              # Service worker для офлайн-кэша
 ├── oui-db.json                        # Offline MAC vendor database
-├── range-controls.css                 # Стили дополнительных IPv4 controls
-├── range-controls.js                  # Дополнительные кнопки управления диапазоном IPv4
 ├── standalone-builder.html            # Браузерный генератор standalone HTML
 ├── standalone-builder.js              # UI standalone builder-а
 ├── standalone-builder-core.js         # Чистая логика сборки Full/Lite standalone
-├── theme-overrides.css                # Дополнительные стили темы
-├── ui-enhancements.js                 # Дополнительные UI-улучшения без сборки
 ├── test/
 │   ├── ipv4-utils.test.js             # Node.js unit-тесты IPv4-логики
 │   └── standalone-builder-core.test.js # Node.js тесты standalone-сборки
@@ -154,8 +151,7 @@ Builder загружает текущие исходники с того же or
 ```bash
 node --check ipv4-utils.js
 node --check cidr-set-utils.js
-node --check list-export-ui.js
-node --check range-controls.js
+node --check app.js
 node --check sw.js
 node --check standalone-builder.js
 node --check standalone-builder-core.js
