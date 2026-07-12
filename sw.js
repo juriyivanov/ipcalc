@@ -1,4 +1,4 @@
-const CACHE_NAME='ipcalc-pwa-v17';
+const CACHE_NAME='ipcalc-pwa-v18';
 const OUI_DB_PATH='/ipcalc/oui-db.json';
 const SHELL_ASSET_PATHS=new Set(['/ipcalc/index.html','/ipcalc/app.css','/ipcalc/app.js','/ipcalc/ipv4-utils.js','/ipcalc/cidr-set-utils.js','/index.html','/app.css','/app.js','/ipv4-utils.js','/cidr-set-utils.js']);
 const ASSETS=['./','./index.html','./app.css','./app.js','./ipv4-utils.js','./cidr-set-utils.js','./oui-db.json','./manifest.json','./icon.svg','./icon-192.svg','./icon-512.svg','./standalone-builder.html','./standalone-builder.js','./standalone-builder-core.js'];

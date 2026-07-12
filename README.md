@@ -85,9 +85,9 @@ Builder загружает текущие исходники с того же or
 
 1. Откройте вкладку **CIDR Set Calculator**.
 2. Введите CIDR-список в поле **Include networks**; поддерживаются комментарии `#`, запятые, точки с запятой и dotted masks.
-3. Нажмите **Process set**, чтобы получить normalized и aggregated списки, containment relationships и mergeable adjacent pairs.
-4. При необходимости заполните **Networks to exclude (optional)** и нажмите **Subtract exclusions**.
-5. Выберите источник экспорта: **Normalized**, **Aggregated** или **Subtraction result**.
+3. Результаты normalization и aggregation пересчитываются автоматически при изменении полей.
+4. При заполнении **Networks to exclude (optional)** автоматически открывается результат **After exclusions**.
+5. Источник экспорта автоматически переключается на **After exclusions**; при необходимости можно выбрать Aggregated result или Cleaned input.
 
 Поддерживаемые форматы экспорта: Plain CIDR, Cisco prefix-list, MikroTik address-list, VyOS prefix-list, nftables, JSON и CSV.
 

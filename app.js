@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const APP_VERSION = '0.14.2';
+  const APP_VERSION = '0.14.3';
 
   function renderAppVersion() {
     const element = document.getElementById('appVersion');
@@ -463,13 +463,18 @@
       const cidrNoticeSummary = document.getElementById('cidrNoticeSummary');
       const cidrErrorDetails = document.getElementById('cidrErrorDetails');
       const cidrSetErrors = document.getElementById('cidrSetErrors');
+      const cidrAggregatedDetails = document.getElementById('cidrAggregatedDetails');
+      const cidrAggregatedSummary = document.getElementById('cidrAggregatedSummary');
       const cidrCleanedDetails = document.getElementById('cidrCleanedDetails');
+      const cidrCleanedSummary = document.getElementById('cidrCleanedSummary');
+      const cidrSubtractDetails = document.getElementById('cidrSubtractDetails');
+      const cidrSubtractSummary = document.getElementById('cidrSubtractSummary');
       const cidrAnalysisDetails = document.getElementById('cidrAnalysisDetails');
       const cidrContainedSection = document.getElementById('cidrContainedSection');
       const cidrMergeableSection = document.getElementById('cidrMergeableSection');
       const cidrExportSource = document.getElementById('cidrExportSource');
-      let cidrNormalizedItems = [], cidrAggregatedItems = [], cidrSubtractionItems = null, cidrUpdateTimer = null;
-      const cidrExport = createExportPanel({ container: document.getElementById('cidrExportPanel'), getItems: () => cidrExportSource.value === 'after-exclusions' ? (cidrSubtractionItems || []) : (cidrExportSource.value === 'cleaned' ? cidrNormalizedItems : cidrAggregatedItems), defaultName: 'CIDR_SET' });
+      let cidrNormalizedItems = [], cidrAggregatedItems = [], cidrSubtractionItems = null, cidrUpdateTimer = null, cidrExportDisabledMessage = '';
+      const cidrExport = createExportPanel({ container: document.getElementById('cidrExportPanel'), getItems: () => cidrExportSource.value === 'after-exclusions' ? (cidrSubtractionItems || []) : (cidrExportSource.value === 'cleaned' ? cidrNormalizedItems : cidrAggregatedItems), defaultName: 'CIDR_SET', getDisabledMessage: () => cidrExportDisabledMessage });
       function addressCount(prefix) { return 2 ** (32 - prefix); }
       function plural(count, singular, pluralText) { return `${count.toLocaleString()} ${count === 1 ? singular : (pluralText || singular + 's')}`; }
       function totalAddresses(items) { return items.reduce((n, x) => n + addressCount(x.prefix), 0); }
@@ -494,10 +499,13 @@
         cidrErrorDetails.style.display = errors.length ? 'block' : 'none';
       }
       function updateExportSources(hasSubtraction) {
-        const old = cidrExportSource.value;
-        cidrExportSource.innerHTML = '<option value="aggregated">Aggregated result</option><option value="cleaned">Cleaned input</option>';
-        if (hasSubtraction) cidrExportSource.appendChild(new Option('After exclusions', 'after-exclusions'));
-        cidrExportSource.value = hasSubtraction && old === 'after-exclusions' ? 'after-exclusions' : (old === 'cleaned' ? 'cleaned' : 'aggregated');
+        cidrExportSource.replaceChildren(new Option('Aggregated result', 'aggregated'), new Option('Cleaned input', 'cleaned'));
+        if (hasSubtraction) {
+          cidrExportSource.appendChild(new Option('After exclusions', 'after-exclusions'));
+          cidrExportSource.value = 'after-exclusions';
+        } else {
+          cidrExportSource.value = 'aggregated';
+        }
       }
       function updateCidrSet() {
         const include = CidrSetUtils.parseCidrList(cidrSetInput.value);
@@ -505,15 +513,30 @@
         const aggregated = CidrSetUtils.aggregateCidrSet(normalized.items);
         const analysis = CidrSetUtils.analyzeCidrSet(include.items);
         const errors = include.errors.map((e) => `Include line ${e.line}: ${e.input} — ${e.message}`);
-        cidrNormalizedItems = normalized.items; cidrAggregatedItems = aggregated.items; cidrSubtractionItems = null;
-        let summaryItems = aggregated.items, afterText = '';
+        cidrExportDisabledMessage = '';
+        cidrNormalizedItems = normalized.items;
+        cidrAggregatedItems = aggregated.items;
+        cidrSubtractionItems = null;
+        let summaryItems = aggregated.items;
+        let afterText = '';
+        let hasValidExclusions = false;
         if (cidrExcludeInput.value.trim()) {
           const exclude = CidrSetUtils.parseCidrList(cidrExcludeInput.value);
           errors.push(...exclude.errors.map((e) => `Exclude line ${e.line}: ${e.input} — ${e.message}`));
-          const sub = CidrSetUtils.subtractCidrSets(include.items, exclude.items);
-          if (sub.error) errors.push(sub.error);
-          cidrSubtractionItems = sub.items; summaryItems = sub.items;
-          afterText = ` → ${plural(sub.items.length, 'after exclusions', 'after exclusions')}`;
+          hasValidExclusions = exclude.items.length > 0;
+          if (hasValidExclusions) {
+            const sub = CidrSetUtils.subtractCidrSets(include.items, exclude.items);
+            if (sub.error) {
+              errors.push(sub.error);
+              cidrExportDisabledMessage = sub.error;
+              cidrSubtractionItems = [];
+              hasValidExclusions = false;
+            } else {
+              cidrSubtractionItems = sub.items;
+              summaryItems = sub.items;
+              afterText = ` → ${plural(sub.items.length, 'after exclusions', 'after exclusions')}`;
+            }
+          }
         }
         cidrPrimarySummary.textContent = `${plural(include.items.length, 'input network')} → ${plural(aggregated.items.length, 'aggregated')}${afterText} · ${plural(totalAddresses(summaryItems), 'address', 'addresses')}`;
         const notices = [];
@@ -524,11 +547,22 @@
         renderErrors(errors);
         renderCidrTable('#cidrAggregatedTable', aggregated.items, 'cidrAggregatedWarning');
         renderCidrTable('#cidrNormalizedTable', normalized.items, 'cidrNormalizedWarning');
-        cidrCleanedDetails.querySelector('summary').textContent = `Cleaned input before aggregation (${normalized.items.length.toLocaleString()} networks)`;
-        const hasSubtraction = Array.isArray(cidrSubtractionItems);
-        document.getElementById('cidrSubtractHeading').style.display = hasSubtraction ? 'block' : 'none';
-        document.getElementById('cidrSubtractTable').style.display = hasSubtraction ? 'table' : 'none';
-        if (hasSubtraction) renderCidrTable('#cidrSubtractTable', cidrSubtractionItems);
+        cidrAggregatedSummary.textContent = `Aggregated result (${plural(aggregated.items.length, 'network')})`;
+        cidrCleanedSummary.textContent = `Cleaned input before aggregation (${plural(normalized.items.length, 'network')})`;
+        const hasSubtraction = hasValidExclusions && Array.isArray(cidrSubtractionItems);
+        if (hasSubtraction) {
+          cidrAggregatedDetails.open = false;
+          cidrSubtractDetails.style.display = 'block';
+          cidrSubtractDetails.open = true;
+          cidrSubtractSummary.textContent = `After exclusions (${plural(cidrSubtractionItems.length, 'network')})`;
+          renderCidrTable('#cidrSubtractTable', cidrSubtractionItems, 'cidrSubtractWarning');
+        } else {
+          cidrAggregatedDetails.open = true;
+          cidrSubtractDetails.open = false;
+          cidrSubtractDetails.style.display = 'none';
+          cidrSubtractSummary.textContent = 'After exclusions';
+          renderCidrTable('#cidrSubtractTable', [], 'cidrSubtractWarning');
+        }
         renderMessageList(document.getElementById('cidrContainedList'), analysis.contained);
         renderMessageList(document.getElementById('cidrMergeableList'), analysis.adjacentMergeable);
         cidrContainedSection.style.display = analysis.contained.length ? 'block' : 'none';
