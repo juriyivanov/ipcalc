@@ -195,13 +195,14 @@
     .small { font-size: 0.9em; }
     .examples { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .export-panel { margin-top: 14px; padding: 12px; border: 1px solid var(--mac-border, #ccc); border-radius: 8px; }
-    .export-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; align-items: end; }
-    .export-output, .cidr-input-grid textarea { width: 100%; box-sizing: border-box; min-height: 120px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .export-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: end; }
+    .export-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .export-output { width: 100%; box-sizing: border-box; min-height: 2.5rem; max-height: 70vh; resize: vertical; overflow-y: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .cidr-input-grid textarea { width: 100%; box-sizing: border-box; min-height: 120px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .cidr-input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .cidr-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-    .cidr-summary .result-item { border: 1px solid var(--mac-border, #ccc); border-radius: 6px; padding: 8px; }
+    .cidr-status { margin: 12px 0; padding: 10px; border: 1px solid var(--mac-border, #ccc); border-radius: 8px; }
     @media (max-width: 640px) {
-      .mac-input-row, .format-row, .result-grid, .cidr-input-grid, .cidr-summary, .export-controls { grid-template-columns: 1fr; display: grid; }
+      .mac-input-row, .format-row, .result-grid, .cidr-input-grid, .export-fields { grid-template-columns: 1fr; display: grid; }
       .copy-button { width: 100%; }
       .tabs { overflow-x: auto; }
       .tab-button { white-space: nowrap; }
@@ -280,11 +281,23 @@
       <p>Convert an IPv4 address range into one or more CIDR blocks that exactly cover the range.</p>
       <div class="form-group">
         <label for="rangeStart">Start IP:</label>
-        <input type="text" id="rangeStart" placeholder="e.g. 192.168.100.0" />
+        <div class="input-group">
+          <input type="text" id="rangeStart" placeholder="e.g. 192.168.100.0" />
+          <div class="group-buttons">
+            <button id="prevRangeStartBtn" type="button">−</button>
+            <button id="nextRangeStartBtn" type="button">+</button>
+          </div>
+        </div>
       </div>
       <div class="form-group">
         <label for="rangeEnd">End IP:</label>
-        <input type="text" id="rangeEnd" placeholder="e.g. 192.168.100.10" />
+        <div class="input-group">
+          <input type="text" id="rangeEnd" placeholder="e.g. 192.168.100.10" />
+          <div class="group-buttons">
+            <button id="prevRangeEndBtn" type="button">−</button>
+            <button id="nextRangeEndBtn" type="button">+</button>
+          </div>
+        </div>
       </div>
       <button id="convertRangeBtn">Convert Range</button>
       <div class="results" id="rangeResults" style="display: none;">
@@ -363,16 +376,20 @@
 192.168.1.0/24</textarea></div>
         <div class="form-group"><label for="cidrExcludeInput">Networks to exclude (optional)</label><textarea id="cidrExcludeInput"></textarea></div>
       </div>
-      <button id="processCidrSetBtn" type="button">Process set</button>
-      <button id="subtractCidrSetBtn" type="button">Subtract exclusions</button>
-      <div id="cidrSetErrors" class="error" role="alert"></div>
       <div class="results" id="cidrSetResults" style="display:none;">
-        <div class="cidr-summary" id="cidrSummary"></div>
-        <h3>Aggregated</h3><div id="cidrAggregatedWarning" class="result-item"></div><table id="cidrAggregatedTable"><thead><tr><th>Network</th><th>Subnet mask</th><th>First address</th><th>Last address</th><th>Addresses</th></tr></thead><tbody></tbody></table>
-        <h3>Normalized</h3><div id="cidrNormalizedWarning" class="result-item"></div><table id="cidrNormalizedTable"><thead><tr><th>Network</th><th>Subnet mask</th><th>First address</th><th>Last address</th><th>Addresses</th></tr></thead><tbody></tbody></table>
-        <h3 id="cidrSubtractHeading" style="display:none;">Subtraction result</h3><table id="cidrSubtractTable" style="display:none;"><thead><tr><th>Network</th><th>Subnet mask</th><th>First address</th><th>Last address</th><th>Addresses</th></tr></thead><tbody></tbody></table>
-        <h3>Containment relationships</h3><div id="cidrContainedList"></div><h3>Mergeable adjacent pairs</h3><div id="cidrMergeableList"></div>
-        <div class="form-group"><label for="cidrExportSource">Export source</label><select id="cidrExportSource"><option value="normalized">Normalized</option><option value="aggregated">Aggregated</option></select></div>
+        <div class="cidr-status">
+          <div id="cidrPrimarySummary"></div>
+          <div id="cidrNoticeSummary" class="muted"></div>
+        </div>
+        <details id="cidrErrorDetails" style="display:none;">
+          <summary>Show invalid lines</summary>
+          <div id="cidrSetErrors" class="error" role="alert"></div>
+        </details>
+        <h3>Aggregated result</h3><div id="cidrAggregatedWarning" class="result-item"></div><table id="cidrAggregatedTable"><thead><tr><th>Network</th><th>Subnet mask</th><th>First address</th><th>Last address</th><th>Addresses</th></tr></thead><tbody></tbody></table>
+        <details id="cidrCleanedDetails"><summary>Cleaned input before aggregation (0 networks)</summary><div id="cidrNormalizedWarning" class="result-item"></div><table id="cidrNormalizedTable"><thead><tr><th>Network</th><th>Subnet mask</th><th>First address</th><th>Last address</th><th>Addresses</th></tr></thead><tbody></tbody></table></details>
+        <h3 id="cidrSubtractHeading" style="display:none;">After exclusions</h3><table id="cidrSubtractTable" style="display:none;"><thead><tr><th>Network</th><th>Subnet mask</th><th>First address</th><th>Last address</th><th>Addresses</th></tr></thead><tbody></tbody></table>
+        <details id="cidrAnalysisDetails" style="display:none;"><summary>Set analysis</summary><section id="cidrContainedSection"><h4>Contained networks</h4><div id="cidrContainedList"></div></section><section id="cidrMergeableSection"><h4>Mergeable adjacent networks</h4><div id="cidrMergeableList"></div></section></details>
+        <div class="form-group"><label for="cidrExportSource">Export source</label><select id="cidrExportSource"><option value="aggregated">Aggregated result</option><option value="cleaned">Cleaned input</option></select></div>
         <div id="cidrExportPanel"></div>
       </div>
     </div>
@@ -645,9 +662,23 @@
       if (subnets.length > 0) {
         rangeResults.style.display = 'block';
       }
+      rangeExport.refresh();
+    }
+
+    function updateRangeIp(input, delta) {
+      const value = ipToInt(input.value.trim());
+      if (value === null) return;
+      const next = value + delta;
+      if (next < 0 || next > IPV4_MAX) return;
+      input.value = intToIp(next >>> 0);
+      if (ipToInt(rangeStart.value.trim()) !== null && ipToInt(rangeEnd.value.trim()) !== null) convertRange();
     }
 
     convertRangeBtn.addEventListener('click', convertRange);
+    document.getElementById('prevRangeStartBtn').addEventListener('click', () => updateRangeIp(rangeStart, -1));
+    document.getElementById('nextRangeStartBtn').addEventListener('click', () => updateRangeIp(rangeStart, 1));
+    document.getElementById('prevRangeEndBtn').addEventListener('click', () => updateRangeIp(rangeEnd, -1));
+    document.getElementById('nextRangeEndBtn').addEventListener('click', () => updateRangeIp(rangeEnd, 1));
 
     /***************************************************
      * 3) IPv4 Subnet Calculator
@@ -761,6 +792,7 @@
       }
       subnetTableBody.appendChild(fragment);
       subnetResults.style.display = 'block';
+      subnetExport.refresh();
     }
 
     subnetCalcBtn.addEventListener('click', calcSubnets);
@@ -780,12 +812,20 @@
     const cidrSetInput = document.getElementById('cidrSetInput');
     const cidrExcludeInput = document.getElementById('cidrExcludeInput');
     const cidrSetResults = document.getElementById('cidrSetResults');
+    const cidrPrimarySummary = document.getElementById('cidrPrimarySummary');
+    const cidrNoticeSummary = document.getElementById('cidrNoticeSummary');
+    const cidrErrorDetails = document.getElementById('cidrErrorDetails');
     const cidrSetErrors = document.getElementById('cidrSetErrors');
-    const cidrSummary = document.getElementById('cidrSummary');
+    const cidrCleanedDetails = document.getElementById('cidrCleanedDetails');
+    const cidrAnalysisDetails = document.getElementById('cidrAnalysisDetails');
+    const cidrContainedSection = document.getElementById('cidrContainedSection');
+    const cidrMergeableSection = document.getElementById('cidrMergeableSection');
     const cidrExportSource = document.getElementById('cidrExportSource');
-    let cidrNormalizedItems = [], cidrAggregatedItems = [], cidrSubtractionItems = null;
-    const cidrExport = window.ListExportUI.createExportPanel({ container: document.getElementById('cidrExportPanel'), getItems: () => cidrExportSource.value === 'subtraction' ? (cidrSubtractionItems || []) : (cidrExportSource.value === 'aggregated' ? cidrAggregatedItems : cidrNormalizedItems), defaultName: 'CIDR_SET' });
+    let cidrNormalizedItems = [], cidrAggregatedItems = [], cidrSubtractionItems = null, cidrUpdateTimer = null;
+    const cidrExport = window.ListExportUI.createExportPanel({ container: document.getElementById('cidrExportPanel'), getItems: () => cidrExportSource.value === 'after-exclusions' ? (cidrSubtractionItems || []) : (cidrExportSource.value === 'cleaned' ? cidrNormalizedItems : cidrAggregatedItems), defaultName: 'CIDR_SET' });
     function addressCount(prefix) { return 2 ** (32 - prefix); }
+    function plural(count, singular, pluralText) { return `${count.toLocaleString()} ${count === 1 ? singular : (pluralText || singular + 's')}`; }
+    function totalAddresses(items) { return items.reduce((n, x) => n + addressCount(x.prefix), 0); }
     function renderCidrTable(selector, items, warningId) {
       const tbody = document.querySelector(selector + ' tbody'); tbody.innerHTML = '';
       const warning = warningId ? document.getElementById(warningId) : null;
@@ -798,24 +838,67 @@
         frag.appendChild(row);
       }); tbody.appendChild(frag);
     }
-    function addSummary(label, value) { const div = document.createElement('div'); div.className = 'result-item'; div.innerHTML = `<strong>${label}:</strong> ${value}`; cidrSummary.appendChild(div); }
-    function renderMessages(id, messages) { const el = document.getElementById(id); el.innerHTML = ''; (messages.length ? messages : ['None']).slice(0, CIDR_VISIBLE_ROWS).forEach((m) => { const div = document.createElement('div'); div.textContent = m.message || m; el.appendChild(div); }); }
-    function updateExportSources(hasSubtraction) { const old = cidrExportSource.value; cidrExportSource.innerHTML = '<option value="normalized">Normalized</option><option value="aggregated">Aggregated</option>'; if (hasSubtraction) cidrExportSource.appendChild(new Option('Subtraction result', 'subtraction')); cidrExportSource.value = hasSubtraction && old === 'subtraction' ? 'subtraction' : 'aggregated'; }
-    function processCidrSet(runSubtract) {
-      cidrSetErrors.textContent = ''; cidrSummary.innerHTML = ''; cidrSubtractionItems = null; cidrExport.clear();
-      const parsed = CidrSetUtils.parseCidrList(cidrSetInput.value);
-      if (parsed.errors.length) cidrSetErrors.textContent = parsed.errors.map((e) => `Line ${e.line}: ${e.input} — ${e.message}`).join('\n');
-      const normalized = CidrSetUtils.normalizeCidrSet(parsed.items); const aggregated = CidrSetUtils.aggregateCidrSet(normalized.items); const analysis = CidrSetUtils.analyzeCidrSet(parsed.items);
-      cidrNormalizedItems = normalized.items; cidrAggregatedItems = aggregated.items;
-      addSummary('parsed count', parsed.items.length); addSummary('invalid lines count', parsed.errors.length); addSummary('duplicates removed', normalized.duplicateCount); addSummary('contained networks removed', normalized.containedCount); addSummary('original network count', parsed.items.length); addSummary('normalized network count', normalized.items.length); addSummary('aggregated network count', aggregated.items.length); addSummary('total covered IPv4 addresses', aggregated.items.reduce((n, x) => n + addressCount(x.prefix), 0).toLocaleString());
-      renderCidrTable('#cidrAggregatedTable', aggregated.items, 'cidrAggregatedWarning'); renderCidrTable('#cidrNormalizedTable', normalized.items, 'cidrNormalizedWarning');
-      renderMessages('cidrContainedList', analysis.contained); renderMessages('cidrMergeableList', analysis.adjacentMergeable);
-      if (runSubtract && cidrExcludeInput.value.trim()) { const ex = CidrSetUtils.parseCidrList(cidrExcludeInput.value); if (ex.errors.length) cidrSetErrors.textContent += '\n' + ex.errors.map((e) => `Exclude line ${e.line}: ${e.input} — ${e.message}`).join('\n'); const sub = CidrSetUtils.subtractCidrSets(parsed.items, ex.items); if (sub.error) cidrSetErrors.textContent += '\n' + sub.error; cidrSubtractionItems = sub.items; document.getElementById('cidrSubtractHeading').style.display = 'block'; document.getElementById('cidrSubtractTable').style.display = 'table'; renderCidrTable('#cidrSubtractTable', sub.items); } else { document.getElementById('cidrSubtractHeading').style.display = 'none'; document.getElementById('cidrSubtractTable').style.display = 'none'; }
-      updateExportSources(!!cidrSubtractionItems); cidrSetResults.style.display = 'block';
+    function renderMessageList(container, messages) {
+      container.innerHTML = '';
+      messages.slice(0, CIDR_VISIBLE_ROWS).forEach((m) => { const div = document.createElement('div'); div.textContent = m.message || m; container.appendChild(div); });
     }
-    document.getElementById('processCidrSetBtn').addEventListener('click', () => processCidrSet(false));
-    document.getElementById('subtractCidrSetBtn').addEventListener('click', () => processCidrSet(true));
-
+    function renderErrors(errors) {
+      cidrSetErrors.textContent = errors.join('\n');
+      cidrErrorDetails.style.display = errors.length ? 'block' : 'none';
+    }
+    function updateExportSources(hasSubtraction) {
+      const old = cidrExportSource.value;
+      cidrExportSource.innerHTML = '<option value="aggregated">Aggregated result</option><option value="cleaned">Cleaned input</option>';
+      if (hasSubtraction) cidrExportSource.appendChild(new Option('After exclusions', 'after-exclusions'));
+      cidrExportSource.value = hasSubtraction && old === 'after-exclusions' ? 'after-exclusions' : (old === 'cleaned' ? 'cleaned' : 'aggregated');
+    }
+    function updateCidrSet() {
+      const include = CidrSetUtils.parseCidrList(cidrSetInput.value);
+      const normalized = CidrSetUtils.normalizeCidrSet(include.items);
+      const aggregated = CidrSetUtils.aggregateCidrSet(normalized.items);
+      const analysis = CidrSetUtils.analyzeCidrSet(include.items);
+      const errors = include.errors.map((e) => `Include line ${e.line}: ${e.input} — ${e.message}`);
+      cidrNormalizedItems = normalized.items; cidrAggregatedItems = aggregated.items; cidrSubtractionItems = null;
+      let summaryItems = aggregated.items, afterText = '';
+      if (cidrExcludeInput.value.trim()) {
+        const exclude = CidrSetUtils.parseCidrList(cidrExcludeInput.value);
+        errors.push(...exclude.errors.map((e) => `Exclude line ${e.line}: ${e.input} — ${e.message}`));
+        const sub = CidrSetUtils.subtractCidrSets(include.items, exclude.items);
+        if (sub.error) errors.push(sub.error);
+        cidrSubtractionItems = sub.items; summaryItems = sub.items;
+        afterText = ` → ${plural(sub.items.length, 'after exclusions', 'after exclusions')}`;
+      }
+      cidrPrimarySummary.textContent = `${plural(include.items.length, 'input network')} → ${plural(aggregated.items.length, 'aggregated')}${afterText} · ${plural(totalAddresses(summaryItems), 'address', 'addresses')}`;
+      const notices = [];
+      if (normalized.duplicateCount) notices.push(plural(normalized.duplicateCount, 'duplicate removed', 'duplicates removed'));
+      if (normalized.containedCount) notices.push(plural(normalized.containedCount, 'contained network removed', 'contained networks removed'));
+      if (errors.length) notices.push(plural(errors.length, 'invalid line', 'invalid lines'));
+      cidrNoticeSummary.textContent = notices.join(' · ');
+      renderErrors(errors);
+      renderCidrTable('#cidrAggregatedTable', aggregated.items, 'cidrAggregatedWarning');
+      renderCidrTable('#cidrNormalizedTable', normalized.items, 'cidrNormalizedWarning');
+      cidrCleanedDetails.querySelector('summary').textContent = `Cleaned input before aggregation (${normalized.items.length.toLocaleString()} networks)`;
+      const hasSubtraction = Array.isArray(cidrSubtractionItems);
+      document.getElementById('cidrSubtractHeading').style.display = hasSubtraction ? 'block' : 'none';
+      document.getElementById('cidrSubtractTable').style.display = hasSubtraction ? 'table' : 'none';
+      if (hasSubtraction) renderCidrTable('#cidrSubtractTable', cidrSubtractionItems);
+      renderMessageList(document.getElementById('cidrContainedList'), analysis.contained);
+      renderMessageList(document.getElementById('cidrMergeableList'), analysis.adjacentMergeable);
+      cidrContainedSection.style.display = analysis.contained.length ? 'block' : 'none';
+      cidrMergeableSection.style.display = analysis.adjacentMergeable.length ? 'block' : 'none';
+      cidrAnalysisDetails.style.display = (analysis.contained.length || analysis.adjacentMergeable.length) ? 'block' : 'none';
+      updateExportSources(hasSubtraction);
+      cidrSetResults.style.display = 'block';
+      cidrExport.refresh();
+    }
+    function scheduleCidrSetUpdate() {
+      clearTimeout(cidrUpdateTimer);
+      cidrUpdateTimer = setTimeout(updateCidrSet, 250);
+    }
+    cidrSetInput.addEventListener('input', scheduleCidrSetUpdate);
+    cidrExcludeInput.addEventListener('input', scheduleCidrSetUpdate);
+    cidrExportSource.addEventListener('change', () => cidrExport.refresh());
+    updateCidrSet();
 
     const macInput = document.getElementById('macInput');
     const randomMacBtn = document.getElementById('randomMacBtn');

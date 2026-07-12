@@ -13,7 +13,7 @@
     '<script src="./ipv4-utils.js"></script>', '<script src="./cidr-set-utils.js"></script>', '<script src="./list-export-ui.js"></script>',
     'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone',
     'IPv4 Range to Prefix Converter',
-    'IPv4 Subnet Calculator', 'CIDR Set Calculator',
+    'IPv4 Subnet Calculator', 'CIDR Set Calculator', 'Aggregated result', 'Cleaned input before aggregation',
     'data-tab="mac-vendor"',
     'id="toggleDarkModeBtn"',
     'id="analyzer"',
@@ -25,7 +25,7 @@
     'id="formatsList"',
     'function runFormatterOnly()'
   ];
-  const REQUIRED_OUTPUT_SNIPPETS = ['<!DOCTYPE html>', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'CIDR Set Calculator', 'data-tab="mac-vendor"'];
+  const REQUIRED_OUTPUT_SNIPPETS = ['<!DOCTYPE html>', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'CIDR Set Calculator', 'Aggregated result', 'Cleaned input before aggregation', 'data-tab="mac-vendor"'];
   const FORBIDDEN_RUNTIME_REFS = [/<script\b[^>]*\bsrc=/i, /<link\b[^>]*\brel=["']stylesheet["']/i, /<link\b[^>]*\brel=["']manifest["']/i];
   const FORBIDDEN_LOCAL_FETCHES = [/fetch\(\s*["'`]\.\//, /fetch\(\s*new Request\(\s*["'`]\.\//];
 

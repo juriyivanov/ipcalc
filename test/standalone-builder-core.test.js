@@ -33,7 +33,7 @@ const { full, lite } = buildAndValidate();
 const forbiddenBindTemplates = ['Absolute PTR record', 'Zone-relative PTR template', 'host.example.net.', 'Copy PTR record', 'Copy zone template'];
 hasNone(sources['index.html'], forbiddenBindTemplates);
 
-hasAll(full, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'CIDR Set Calculator', 'Normalize', 'Aggregate', 'Networks to exclude', 'Export format', 'Cisco prefix-list', 'MikroTik address-list', 'VyOS prefix-list', 'nftables set', 'MAC Vendor / Formats', 'Copy formats', 'embedded-oui-db', 'Vendor', 'Matched prefix', 'Assignment type', 'Random vendor MAC', 'function lookupVendor']);
+hasAll(full, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'CIDR Set Calculator', 'Aggregated result', 'Cleaned input before aggregation', 'Set analysis', 'Networks to exclude', 'Export format', 'Copy output', 'Download', 'prevRangeStartBtn', 'nextRangeStartBtn', 'prevRangeEndBtn', 'nextRangeEndBtn', 'Cisco prefix-list', 'MikroTik address-list', 'VyOS prefix-list', 'nftables set', 'MAC Vendor / Formats', 'Copy formats', 'embedded-oui-db', 'Vendor', 'Matched prefix', 'Assignment type', 'Random vendor MAC', 'function lookupVendor']);
 noExternal(full);
 hasNone(full, forbiddenBindTemplates);
 assert.strictEqual(count(full, 'id="embedded-oui-db"'), 1, 'Full must contain exactly one embedded OUI database');
@@ -46,7 +46,8 @@ assert(appScriptIndex >= 0, 'application script marker must exist');
 assert(embeddedIndex < initialLookupIndex, 'embedded OUI database must appear before the initial lookup');
 assert(embeddedIndex < appScriptIndex, 'embedded OUI database must be parsed before application JavaScript');
 
-hasAll(lite, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'CIDR Set Calculator', 'Normalize', 'Aggregate', 'Networks to exclude', 'Export format', 'Cisco prefix-list', 'MikroTik address-list', 'VyOS prefix-list', 'nftables set', 'MAC Formats', 'Colon uppercase', 'Colon lowercase', 'Hyphen uppercase', 'Hyphen lowercase', 'Cisco dotted lowercase', 'Cisco dotted uppercase', 'Plain uppercase', 'Plain lowercase', 'Space separated', '0x-prefixed', 'Random MAC', 'Unicast', 'Multicast / group address', 'Broadcast', 'Globally administered', 'Locally administered / randomized possible', 'function runFormatterOnly']);
+hasAll(lite, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'CIDR Set Calculator', 'Aggregated result', 'Cleaned input before aggregation', 'Set analysis', 'Networks to exclude', 'Export format', 'Copy output', 'Download', 'prevRangeStartBtn', 'nextRangeStartBtn', 'prevRangeEndBtn', 'nextRangeEndBtn', 'Cisco prefix-list', 'MikroTik address-list', 'VyOS prefix-list', 'nftables set', 'MAC Formats', 'Colon uppercase', 'Colon lowercase', 'Hyphen uppercase', 'Hyphen lowercase', 'Cisco dotted lowercase', 'Cisco dotted uppercase', 'Plain uppercase', 'Plain lowercase', 'Space separated', '0x-prefixed', 'Random MAC', 'Unicast', 'Multicast / group address', 'Broadcast', 'Globally administered', 'Locally administered / randomized possible', 'function runFormatterOnly']);
+hasNone(full + lite + sources['index.html'], ['Process set', 'Subtract exclusions', 'Generate', '0 invalid lines']);
 hasNone(lite, ['Vendor', 'Matched prefix', 'Assignment type', 'Random vendor MAC', 'oui-db.json', 'embedded-oui-db', 'lookupVendor', 'loadOuiDb', 'Vendor not found', 'OUI database', 'bundled vendor database']);
 noExternal(lite);
 hasNone(lite, forbiddenBindTemplates);
@@ -61,7 +62,7 @@ hasAll(builder, ['Build and download Full standalone', 'Build and download Lite 
 assertIds(lite, [
   'toggleDarkModeBtn', 'analyzer', 'range', 'subnet', 'cidr-set', 'mac-vendor', 'ipInput', 'subnetInput', 'rangeStart', 'rangeEnd',
   'baseNetwork', 'baseCIDR', 'newCIDR', 'convertRangeBtn', 'subnetCalcBtn', 'macInput', 'clearBtn',
-  'cidrSetInput', 'cidrExcludeInput', 'cidrExportSource', 'macError', 'resultCard', 'formatsCard', 'flagBadges', 'formatsList', 'randomMacBtn'
+  'prevRangeStartBtn', 'nextRangeStartBtn', 'prevRangeEndBtn', 'nextRangeEndBtn', 'cidrSetInput', 'cidrExcludeInput', 'cidrExportSource', 'macError', 'resultCard', 'formatsCard', 'flagBadges', 'formatsList', 'randomMacBtn'
 ], ['randomVendorMacBtn', 'vendorName', 'matchedPrefix', 'assignmentType', 'dbStatus']);
 hasAll(lite, [
   "tabButtons.forEach(btn =>", "btn.addEventListener('click'", "toggleDarkModeBtn.addEventListener('click'",
@@ -121,3 +122,7 @@ console.log(`Full ${Core.formatBytes(Core.bytes(full))}; Lite ${Core.formatBytes
 
 hasAll(sources['index.html'], ['cidr-set-utils.js', 'list-export-ui.js']);
 hasAll(Core.SOURCE_FILES, ['cidr-set-utils.js', 'list-export-ui.js']);
+
+const exportUi = sources['list-export-ui.js'];
+hasAll(exportUi, ['function refresh()', "format.addEventListener('change', refresh)", "name.addEventListener('input', refresh)", "action.addEventListener('change', refresh)", 'setDisabled(!output.value)', 'function resizeOutput()', 'output.scrollHeight']);
+hasNone(exportUi, ['Generate', 'return { clear, generate']);
