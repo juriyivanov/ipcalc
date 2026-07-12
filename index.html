@@ -11,197 +11,7 @@
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./icon-192.svg" />
   <title>Extended IP Calculator</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #f9f9f9;
-      color: #333;
-      transition: background-color 0.3s, color 0.3s;
-      position: relative;
-    }
-    .dark-mode {
-      background-color: #333;
-      color: #eee;
-    }
-    .container {
-      max-width: 800px;
-      margin: auto;
-      background-color: #fff;
-      border: 1px solid #ddd;
-      padding: 20px;
-      border-radius: 8px;
-    }
-    .dark-mode .container {
-      background-color: #444;
-      border: 1px solid #555;
-    }
-    h1 {
-      text-align: center;
-      margin-top: 0;
-    }
-    /* Tab Navigation */
-    .tabs {
-      display: flex;
-      border-bottom: 1px solid #ccc;
-      margin-bottom: 15px;
-    }
-    .tab-button {
-      padding: 10px 15px;
-      cursor: pointer;
-      border: none;
-      border-right: 1px solid #ccc;
-      background: #eee;
-      transition: background 0.3s;
-      font-weight: bold;
-    }
-    .tab-button:hover {
-      background: #ddd;
-    }
-    .tab-button.active {
-      background: #fff;
-      border-bottom: 1px solid #fff;
-      cursor: default;
-    }
-    .dark-mode .tab-button {
-      background: #555;
-      color: #eee;
-      border-color: #666;
-    }
-    .dark-mode .tab-button.active {
-      background: #444;
-      border-bottom: 1px solid #444;
-    }
-    .dark-mode .tab-button:hover:not(.active) {
-      background: #666;
-    }
-    /* Tab Content */
-    .tab-content {
-      display: none;
-    }
-    .tab-content.active {
-      display: block;
-    }
-    /* Form groups and inline button groups */
-    .form-group {
-      margin-bottom: 10px;
-    }
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-    .input-group {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .input-group input[type="text"] {
-      flex: 1;
-      padding: 8px;
-      box-sizing: border-box;
-    }
-    .group-buttons button {
-      padding: 5px 10px;
-      cursor: pointer;
-      font-size: 0.9em;
-    }
-    .dark-mode input[type="text"] {
-      background-color: #555;
-      color: #eee;
-      border: 1px solid #666;
-    }
-    .error {
-      color: red;
-      font-size: 0.9em;
-    }
-    /* Results & Tables */
-    .results {
-      margin-top: 15px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      background-color: #eef;
-      border-radius: 8px;
-    }
-    .dark-mode .results {
-      background-color: #555;
-      border-color: #666;
-      color: #eee;
-    }
-    .result-item {
-      margin: 8px 0;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    table th, table td {
-      text-align: left;
-      border-bottom: 1px solid #ccc;
-      padding: 8px;
-    }
-    .dark-mode table th, .dark-mode table td {
-      border-color: #666;
-    }
-    /* Toggle Dark Mode Button */
-    #toggleDarkModeBtn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      padding: 4px 8px;
-      font-size: 0.9em;
-      cursor: pointer;
-    }
-    /* MAC Vendor tab */
-    :root {
-      --mac-card-bg: #f8fafc;
-      --mac-row-bg: #ffffff;
-      --mac-muted: #475569;
-      --mac-border: #cbd5e1;
-      --mac-badge-bg: #eef2ff;
-      --mac-badge-text: #1f2937;
-      --mac-badge-ok-text: #166534;
-      --mac-badge-warn-text: #92400e;
-    }
-    .dark-mode {
-      --mac-card-bg: #3b3b3b;
-      --mac-row-bg: #3f3f3f;
-      --mac-muted: #c7c7c7;
-      --mac-border: #666;
-      --mac-badge-bg: #555;
-      --mac-badge-text: #eee;
-      --mac-badge-ok-text: #86efac;
-      --mac-badge-warn-text: #fbbf24;
-    }
-    .muted { color: var(--mac-muted); font-size: 0.95em; }
-    .mac-input-row { display: flex; gap: 8px; align-items: stretch; }
-    .mac-input-row input[type="text"] { flex: 1; min-width: 0; padding: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    .primary { background: #60a5fa; border-color: #60a5fa; color: #111827; }
-    .primary:hover { background: #93c5fd; }
-    .result-card { margin-top: 16px; padding: 14px; border: 1px solid var(--mac-border); background: var(--mac-card-bg); border-radius: 8px; }
-    .result-grid { display: grid; grid-template-columns: minmax(150px, 0.6fr) minmax(0, 1.4fr); gap: 8px 14px; align-items: center; }
-    .key { color: var(--mac-muted); font-weight: bold; }
-    .value, .format-value { color: inherit; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    .vendor-name { font-family: Arial, sans-serif; font-weight: bold; }
-    .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; background: var(--mac-badge-bg); border: 1px solid var(--mac-border); color: var(--mac-badge-text); font-size: 0.9em; }
-    .badge.ok { border-color: #166534; color: var(--mac-badge-ok-text); }
-    .badge.warn { border-color: #92400e; color: var(--mac-badge-warn-text); }
-    .formats { margin-top: 16px; display: grid; gap: 8px; }
-    .format-row { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px; border: 1px solid var(--mac-border); border-radius: 8px; background: var(--mac-row-bg); }
-    .format-label { font-weight: bold; color: var(--mac-muted); font-size: 0.92em; }
-    .copy-button { white-space: nowrap; }
-    .small { font-size: 0.9em; }
-    .examples { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    @media (max-width: 640px) {
-      .mac-input-row, .format-row, .result-grid { grid-template-columns: 1fr; display: grid; }
-      .copy-button { width: 100%; }
-      .tabs { overflow-x: auto; }
-      .tab-button { white-space: nowrap; }
-    }
-
-  </style>
+  <link rel="stylesheet" href="./app.css" />
 </head>
 <body class="dark-mode">
   <button id="toggleDarkModeBtn">Toggle Mode</button>
@@ -213,6 +23,7 @@
       <button class="tab-button active" data-tab="analyzer">IPv4 Address Analyzer</button>
       <button class="tab-button" data-tab="range">IPv4 Range to Prefix Converter</button>
       <button class="tab-button" data-tab="subnet">IPv4 Subnet Calculator</button>
+      <button class="tab-button" data-tab="cidr-set">CIDR Set Calculator</button>
       <button class="tab-button" data-tab="mac-vendor"><span data-standalone-mac-tab-title>MAC Vendor / Formats</span></button>
     </div>
 
@@ -273,14 +84,30 @@
       <p>Convert an IPv4 address range into one or more CIDR blocks that exactly cover the range.</p>
       <div class="form-group">
         <label for="rangeStart">Start IP:</label>
-        <input type="text" id="rangeStart" placeholder="e.g. 192.168.100.0" />
+        <div class="input-group range-input-group">
+          <input type="text" id="rangeStart" value="192.168.100.0/24" data-prefix="24" placeholder="e.g. 192.168.100.0" />
+          <div class="step-buttons">
+            <button class="step-button" id="prevRangeStartBtn" type="button">IP−</button>
+            <button class="step-button" id="nextRangeStartBtn" type="button">IP+</button>
+            <button class="step-button" id="decreaseRangeStartPrefixBtn" type="button">/−</button>
+            <button class="step-button" id="increaseRangeStartPrefixBtn" type="button">/+</button>
+          </div>
+        </div>
       </div>
       <div class="form-group">
         <label for="rangeEnd">End IP:</label>
-        <input type="text" id="rangeEnd" placeholder="e.g. 192.168.100.10" />
+        <div class="input-group range-input-group">
+          <input type="text" id="rangeEnd" value="192.168.100.255/24" data-prefix="24" placeholder="e.g. 192.168.100.10" />
+          <div class="step-buttons">
+            <button class="step-button" id="prevRangeEndBtn" type="button">IP−</button>
+            <button class="step-button" id="nextRangeEndBtn" type="button">IP+</button>
+            <button class="step-button" id="decreaseRangeEndPrefixBtn" type="button">/−</button>
+            <button class="step-button" id="increaseRangeEndPrefixBtn" type="button">/+</button>
+          </div>
+        </div>
       </div>
-      <button id="convertRangeBtn">Convert Range</button>
       <div class="results" id="rangeResults" style="display: none;">
+        <div id="rangeStatus" class="range-status" role="status"></div>
         <table id="rangeTable">
           <thead>
             <tr>
@@ -290,6 +117,7 @@
           </thead>
           <tbody></tbody>
         </table>
+        <div id="rangeExportPanel"></div>
       </div>
     </div>
 
@@ -339,13 +167,44 @@
           </thead>
           <tbody></tbody>
         </table>
+        <div id="subnetExportNotice" class="error" role="alert"></div>
+        <div id="subnetExportPanel"></div>
+      </div>
+    </div>
+
+    <!-- Tab Content: CIDR Set Calculator -->
+    <div class="tab-content" id="cidr-set">
+      <h2>CIDR Set Calculator</h2>
+      <p>Normalize, aggregate, analyze, subtract, and export IPv4 CIDR lists.</p>
+      <div class="cidr-input-grid">
+        <div class="form-group"><label for="cidrSetInput">Include networks</label><textarea id="cidrSetInput">10.0.0.0/24
+10.0.1.0/24
+10.0.2.0/23
+192.168.1.0/24</textarea></div>
+        <div class="form-group"><label for="cidrExcludeInput">Networks to exclude (optional)</label><textarea id="cidrExcludeInput"></textarea></div>
+      </div>
+      <div class="results" id="cidrSetResults" style="display:none;">
+        <div class="cidr-status">
+          <div id="cidrPrimarySummary"></div>
+          <div id="cidrNoticeSummary" class="muted"></div>
+        </div>
+        <details id="cidrErrorDetails" style="display:none;">
+          <summary>Show invalid lines</summary>
+          <div id="cidrSetErrors" class="error" role="alert"></div>
+        </details>
+        <details id="cidrAggregatedDetails" open><summary id="cidrAggregatedSummary">Aggregated result</summary><div id="cidrAggregatedWarning" class="result-item"></div><table id="cidrAggregatedTable" class="data-table cidr-table"><thead><tr><th>Network</th><th>Subnet mask</th><th>First address</th><th>Last address</th><th>Addresses</th></tr></thead><tbody></tbody></table></details>
+        <details id="cidrCleanedDetails"><summary id="cidrCleanedSummary">Cleaned input before aggregation (0 networks)</summary><div id="cidrNormalizedWarning" class="result-item"></div><table id="cidrNormalizedTable" class="data-table cidr-table"><thead><tr><th>Network</th><th>Subnet mask</th><th>First address</th><th>Last address</th><th>Addresses</th></tr></thead><tbody></tbody></table></details>
+        <details id="cidrSubtractDetails" style="display:none;"><summary id="cidrSubtractSummary">After exclusions</summary><div id="cidrSubtractWarning" class="result-item"></div><table id="cidrSubtractTable" class="data-table cidr-table"><thead><tr><th>Network</th><th>Subnet mask</th><th>First address</th><th>Last address</th><th>Addresses</th></tr></thead><tbody></tbody></table></details>
+        <details id="cidrAnalysisDetails" style="display:none;"><summary>Set analysis</summary><section id="cidrContainedSection"><h4>Contained networks</h4><div id="cidrContainedList"></div></section><section id="cidrMergeableSection"><h4>Mergeable adjacent networks</h4><div id="cidrMergeableList"></div></section></details>
+        <div class="form-group"><label for="cidrExportSource">Export source</label><select id="cidrExportSource"><option value="aggregated">Aggregated result</option><option value="cleaned">Cleaned input</option></select></div>
+        <div id="cidrExportPanel"></div>
       </div>
     </div>
 
     <!-- Tab Content: MAC Vendor / Formats -->
     <div class="tab-content" id="mac-vendor">
       <h2><span data-standalone-mac-heading>MAC Vendor / Formats</span></h2>
-      <p class="muted"><span data-standalone-mac-description>Enter a full MAC address or a vendor prefix in almost any common format. The formatter is fully local; vendor lookup uses the bundled offline OUI database.</span></p>
+      <p class="muted"><span data-standalone-mac-description>Enter a full MAC address or a vendor prefix in almost any common format. The formatter is fully local; vendor lookup uses the bundled offline vendor data.</span></p>
 
       <div class="form-group">
         <label for="macInput">MAC address or prefix</label>
@@ -355,37 +214,37 @@
         </div>
         <div class="error" id="macError"></div>
         <div class="examples small muted">
-          Examples:
-          <button class="example" data-mac="001a.2b3c.4d5e">001a.2b3c.4d5e</button>
-          <button class="example" data-mac="00-1A-2B-3C-4D-5E">00-1A-2B-3C-4D-5E</button>
-          <button class="example" data-mac="001A2B3C4D5E">001A2B3C4D5E</button>
-          <button class="example" data-mac="00:1A:2B">00:1A:2B prefix</button>
-          <button class="primary" id="randomMacBtn" type="button">Random MAC</button>
+          <span class="examples-label">Examples:</span>
+          <button class="example" data-mac="001a.2b3c.4d5e" type="button">001a.2b3c.4d5e</button>
+          <button class="example" data-mac="00-1A-2B-3C-4D-5E" type="button">00-1A-2B-3C-4D-5E</button>
+          <button class="example" data-mac="001A2B3C4D5E" type="button">001A2B3C4D5E</button>
+          <button class="example" data-mac="00:1A:2B" type="button">00:1A:2B prefix</button>
+          <button class="primary random-mac-action" id="randomMacBtn" type="button">Random MAC</button>
           <!-- MAC_VENDOR_HTML_START -->
-          <button class="primary" id="randomVendorMacBtn" type="button">Random vendor MAC</button>
+          <button class="primary random-mac-action" id="randomVendorMacBtn" type="button">Random vendor MAC</button>
           <!-- MAC_VENDOR_HTML_END -->
         </div>
       </div>
 
       <div class="result-card" id="resultCard" style="display: none;">
-        <h3>Result</h3>
         <div class="result-grid">
           <!-- MAC_VENDOR_HTML_START -->
           <div class="key">Vendor</div>
           <div class="value vendor-name" id="vendorName"></div>
           <div class="key">Matched prefix</div>
-          <div class="value" id="matchedPrefix"></div>
+          <!-- MAC_VENDOR_HTML_END -->
+          <div class="matched-prefix-line">
+            <!-- MAC_VENDOR_HTML_START --><span class="value" id="matchedPrefix"></span><!-- MAC_VENDOR_HTML_END -->
+            <span class="badge-row" id="flagBadges"></span>
+          </div>
+          <!-- MAC_VENDOR_HTML_START -->
           <div class="key">Assignment type</div>
           <div class="value" id="assignmentType"></div>
-          <div class="key">OUI database</div>
-          <div class="value" id="dbStatus"></div>
           <!-- MAC_VENDOR_HTML_END -->
         </div>
-        <div class="badge-row" id="flagBadges"></div>
       </div>
 
-      <div class="result-card" id="formatsCard" style="display: none;">
-        <h3>Copy formats</h3>
+      <div class="result-card formats-table-card" id="formatsCard" style="display: none;">
         <div class="formats" id="formatsList"></div>
       </div>
     </div>
@@ -394,671 +253,8 @@
   </div> <!-- end container -->
 
   <script src="./ipv4-utils.js"></script>
-  <script>
-    /***************************************************
-     * General IP Utilities
-     **************************************************/
-    const { IPV4_MAX, SUBNET_RENDER_LIMIT, parseIPv4, intToIPv4, parseCIDR, cidrToMask, maskToCIDR, parseSubnet, parseIPv4WithPrefix, safeSubnetStep, rangeToSubnets, prepareSubnetCalculation, classifyIPv4, ipv4ToPtrName, reverseZoneForPrefix } = window.IPv4Utils;
-    const ipToInt = parseIPv4;
-    const intToIp = intToIPv4;
-
-    /***************************************************
-     * 1) IPv4 Address Analyzer
-     **************************************************/
-    const ipInput         = document.getElementById('ipInput');
-    const subnetInput     = document.getElementById('subnetInput');
-    const ipError         = document.getElementById('ipError');
-    const subnetError     = document.getElementById('subnetError');
-    const analyzerResults = document.getElementById('analyzerResults');
-    const networkAddress  = document.getElementById('networkAddress');
-    const broadcastAddress= document.getElementById('broadcastAddress');
-    const firstHost       = document.getElementById('firstHost');
-    const lastHost        = document.getElementById('lastHost');
-    const totalHosts      = document.getElementById('totalHosts');
-    const subnetOutput    = document.getElementById('subnetOutput');
-    const wildcardMask    = document.getElementById('wildcardMask');
-    const addressType = document.getElementById('addressType');
-    const specialBlock = document.getElementById('specialBlock');
-    const specialReference = document.getElementById('specialReference');
-    const globallyReachable = document.getElementById('globallyReachable');
-    const forwardable = document.getElementById('forwardable');
-    const classificationNoteRow = document.getElementById('classificationNoteRow');
-    const classificationNote = document.getElementById('classificationNote');
-    const ptrLookupName = document.getElementById('ptrLookupName');
-    const reverseZoneRow = document.getElementById('reverseZoneRow');
-    const reverseZone = document.getElementById('reverseZone');
-    const reverseDelegationRow = document.getElementById('reverseDelegationRow');
-    const reverseDelegation = document.getElementById('reverseDelegation');
-    const delegationBoundaryRow = document.getElementById('delegationBoundaryRow');
-    const delegationBoundary = document.getElementById('delegationBoundary');
-    const parentReverseZoneRow = document.getElementById('parentReverseZoneRow');
-    const parentReverseZone = document.getElementById('parentReverseZone');
-    const addressRangeRow = document.getElementById('addressRangeRow');
-    const addressRange = document.getElementById('addressRange');
-    const rfc2317ChildRow = document.getElementById('rfc2317ChildRow');
-    const rfc2317ChildZone = document.getElementById('rfc2317ChildZone');
-    const reverseDnsNoteRow = document.getElementById('reverseDnsNoteRow');
-    const reverseDnsNote = document.getElementById('reverseDnsNote');
-
-    function calculateAnalyzer() {
-      ipError.textContent = '';
-      subnetError.textContent = '';
-
-      const ipInt = ipToInt(ipInput.value.trim());
-      if (ipInt === null) {
-        ipError.textContent = 'Invalid IP address.';
-        analyzerResults.style.display = 'none';
-        return;
-      }
-      const mask = parseSubnet(subnetInput.value);
-      if (mask === null) {
-        subnetError.textContent = 'Invalid subnet mask.';
-        analyzerResults.style.display = 'none';
-        return;
-      }
-
-      const cidr = maskToCIDR(mask);
-      const network = (ipInt & mask) >>> 0;
-      const broadcast = (network | (~mask >>> 0)) >>> 0;
-      const total = (cidr === 32) ? 1 :
-                    (cidr === 31) ? 2 :
-                    Math.max(0, Math.pow(2, 32 - cidr) - 2);
-      const first = (cidr >= 31) ? network : network + 1;
-      const last  = (cidr >= 31) ? broadcast : broadcast - 1;
-      const wildcard = (~mask) >>> 0;
-
-      networkAddress.textContent   = intToIp(network);
-      broadcastAddress.textContent = intToIp(broadcast);
-      firstHost.textContent        = intToIp(first);
-      lastHost.textContent         = intToIp(last);
-      totalHosts.textContent       = total;
-      subnetOutput.textContent     = intToIp(mask) + " (/" + cidr + ")";
-      wildcardMask.textContent     = intToIp(wildcard);
-
-      const classification = classifyIPv4(ipInt);
-      addressType.textContent = classification.category + (classification.name && classification.name !== classification.category ? ' / ' + classification.name : '');
-      specialBlock.textContent = classification.block;
-      specialReference.textContent = classification.reference;
-      globallyReachable.textContent = classification.globallyReachableLabel;
-      forwardable.textContent = classification.forwardableLabel;
-      classificationNoteRow.style.display = classification.note ? 'block' : 'none';
-      classificationNote.textContent = classification.note || '';
-
-      const reverseInfo = reverseZoneForPrefix(ipInt, cidr);
-      ptrLookupName.textContent = ipv4ToPtrName(ipInt);
-      reverseZoneRow.style.display = 'none';
-      reverseDelegationRow.style.display = 'none';
-      delegationBoundaryRow.style.display = 'none';
-      parentReverseZoneRow.style.display = 'none';
-      addressRangeRow.style.display = 'none';
-      rfc2317ChildRow.style.display = 'none';
-      reverseDnsNoteRow.style.display = 'none';
-      if (reverseInfo.kind === 'zone') {
-        reverseZone.textContent = reverseInfo.reverseZone;
-        reverseZoneRow.style.display = 'block';
-      } else if (reverseInfo.kind === 'multiple') {
-        reverseDelegation.textContent = reverseInfo.message + (reverseInfo.zonesRequired ? ` (${reverseInfo.zonesRequired} zones)` : '');
-        delegationBoundary.textContent = reverseInfo.delegationBoundary;
-        reverseDelegationRow.style.display = 'block';
-        delegationBoundaryRow.style.display = 'block';
-      } else if (reverseInfo.kind === 'rfc2317') {
-        parentReverseZone.textContent = reverseInfo.parentZone;
-        addressRange.textContent = reverseInfo.addressRange;
-        rfc2317ChildZone.textContent = reverseInfo.suggestedChildZone;
-        reverseDnsNote.textContent = reverseInfo.note;
-        parentReverseZoneRow.style.display = 'block';
-        addressRangeRow.style.display = 'block';
-        rfc2317ChildRow.style.display = 'block';
-        reverseDnsNoteRow.style.display = 'block';
-      }
-      analyzerResults.style.display = 'block';
-    }
-
-    function jumpToNextSubnet() {
-      const ipInt = ipToInt(ipInput.value.trim());
-      const mask = parseSubnet(subnetInput.value);
-      if (ipInt === null || mask === null) return;
-      const cidr = maskToCIDR(mask);
-      const newIp = safeSubnetStep(ipInt, cidr, 1, cidr >= 31 ? 0 : 1);
-      if (newIp === null) return;
-      ipInput.value = intToIp(newIp);
-      calculateAnalyzer();
-    }
-
-    function jumpToPrevSubnet() {
-      const ipInt = ipToInt(ipInput.value.trim());
-      const mask = parseSubnet(subnetInput.value);
-      if (ipInt === null || mask === null) return;
-      const cidr = maskToCIDR(mask);
-      const newIp = safeSubnetStep(ipInt, cidr, -1, cidr >= 31 ? 0 : 1);
-      if (newIp === null) return;
-      ipInput.value = intToIp(newIp);
-      calculateAnalyzer();
-    }
-
-    function updateMask(increment) {
-      let input = subnetInput.value.trim();
-      let cidr;
-      if (input.startsWith('/')) {
-        cidr = parseCIDR(input);
-      } else {
-        cidr = maskToCIDR(parseSubnet(input));
-      }
-      if (cidr === null) return;
-      cidr += increment;
-      if (cidr < 0) cidr = 0;
-      if (cidr > 32) cidr = 32;
-      subnetInput.value = "/" + cidr;
-      calculateAnalyzer();
-    }
-
-    document.getElementById('copyPtrNameBtn').addEventListener('click', (event) => copyText(ptrLookupName.textContent, event.currentTarget));
-    document.getElementById('copyReverseZoneBtn').addEventListener('click', (event) => copyText(reverseZone.textContent, event.currentTarget));
-    document.getElementById('copyRfc2317ChildBtn').addEventListener('click', (event) => copyText(rfc2317ChildZone.textContent, event.currentTarget));
-
-    ipInput.addEventListener('input', calculateAnalyzer);
-    subnetInput.addEventListener('input', calculateAnalyzer);
-    document.getElementById('nextSubnetBtn').addEventListener('click', jumpToNextSubnet);
-    document.getElementById('prevSubnetBtn').addEventListener('click', jumpToPrevSubnet);
-    document.getElementById('increaseMaskBtn').addEventListener('click', () => updateMask(1));
-    document.getElementById('decreaseMaskBtn').addEventListener('click', () => updateMask(-1));
-
-    /***************************************************
-     * 2) IPv4 Range to Prefix Converter
-     **************************************************/
-    const rangeStart      = document.getElementById('rangeStart');
-    const rangeEnd        = document.getElementById('rangeEnd');
-    const convertRangeBtn = document.getElementById('convertRangeBtn');
-    const rangeResults    = document.getElementById('rangeResults');
-    const rangeTableBody  = document.querySelector('#rangeTable tbody');
-
-    function convertRange() {
-      rangeTableBody.innerHTML = '';
-      rangeResults.style.display = 'none';
-
-      const startInt = ipToInt(rangeStart.value.trim());
-      const endInt   = ipToInt(rangeEnd.value.trim());
-      if (startInt === null || endInt === null) {
-        alert('Invalid start or end IP');
-        return;
-      }
-      if (startInt > endInt) {
-        alert('Start IP must be less than or equal to End IP');
-        return;
-      }
-      const subnets = rangeToSubnets(startInt, endInt);
-      subnets.forEach(s => {
-        const row = document.createElement('tr');
-        const netCell = document.createElement('td');
-        const maskCell = document.createElement('td');
-        netCell.textContent = intToIp(s.network) + '/' + s.prefix;
-        maskCell.textContent = intToIp(s.mask);
-        row.appendChild(netCell);
-        row.appendChild(maskCell);
-        rangeTableBody.appendChild(row);
-      });
-      if (subnets.length > 0) {
-        rangeResults.style.display = 'block';
-      }
-    }
-
-    convertRangeBtn.addEventListener('click', convertRange);
-
-    /***************************************************
-     * 3) IPv4 Subnet Calculator
-     **************************************************/
-    const baseNetworkInput = document.getElementById('baseNetwork');
-    const baseCIDRInput    = document.getElementById('baseCIDR');
-    const newCIDRInput     = document.getElementById('newCIDR');
-    const subnetCalcBtn    = document.getElementById('subnetCalcBtn');
-    const subnetResults    = document.getElementById('subnetResults');
-    const subnetTableBody  = document.querySelector('#subnetTable tbody');
-    const subnetLimitWarning = document.getElementById('subnetLimitWarning');
-
-    // New functions for Subnet Calculator inline controls:
-    function jumpToNextBaseNetwork() {
-      const netInt = ipToInt(baseNetworkInput.value.trim());
-      const mask = parseSubnet(baseCIDRInput.value.trim());
-      if(netInt === null || mask === null) return;
-      const cidr = maskToCIDR(mask);
-      const nextNetwork = safeSubnetStep(netInt, cidr, 1, 0);
-      if (nextNetwork === null) return;
-      baseNetworkInput.value = intToIp(nextNetwork);
-    }
-    function jumpToPrevBaseNetwork() {
-      const netInt = ipToInt(baseNetworkInput.value.trim());
-      const mask = parseSubnet(baseCIDRInput.value.trim());
-      if(netInt === null || mask === null) return;
-      const cidr = maskToCIDR(mask);
-      const prevNetwork = safeSubnetStep(netInt, cidr, -1, 0);
-      if (prevNetwork === null) return;
-      baseNetworkInput.value = intToIp(prevNetwork);
-    }
-    function updateBaseCIDR(increment) {
-      let input = baseCIDRInput.value.trim();
-      let cidr;
-      if(input.startsWith('/')) {
-        cidr = parseCIDR(input);
-      } else {
-        cidr = maskToCIDR(parseSubnet(input));
-      }
-      if(cidr === null) return;
-      cidr += increment;
-      if(cidr < 0) cidr = 0;
-      if(cidr > 32) cidr = 32;
-      baseCIDRInput.value = "/" + cidr;
-    }
-    function updateNewCIDR(increment) {
-      let input = newCIDRInput.value.trim();
-      let cidr;
-      if(input.startsWith('/')) {
-        cidr = parseCIDR(input);
-      } else {
-        cidr = maskToCIDR(parseSubnet(input));
-      }
-      if(cidr === null) return;
-      cidr += increment;
-      if(cidr < 0) cidr = 0;
-      if(cidr > 32) cidr = 32;
-      newCIDRInput.value = "/" + cidr;
-    }
-
-    // Subnet Calculator: Calculate subnets
-    function calcSubnets() {
-      subnetTableBody.innerHTML = '';
-      subnetResults.style.display = 'none';
-      subnetLimitWarning.style.display = 'none';
-      subnetLimitWarning.textContent = '';
-
-      const calculation = prepareSubnetCalculation(
-        baseNetworkInput.value,
-        baseCIDRInput.value,
-        newCIDRInput.value
-      );
-      if (!calculation.ok) {
-        alert(calculation.message);
-        return;
-      }
-
-      subnetLimitWarning.style.display = calculation.totalSubnets > SUBNET_RENDER_LIMIT ? 'block' : 'none';
-      subnetLimitWarning.textContent = calculation.totalSubnets > SUBNET_RENDER_LIMIT
-        ? `The calculation contains ${calculation.totalSubnets.toLocaleString()} subnets. Showing the first ${calculation.visibleSubnets.toLocaleString()} entries.`
-        : '';
-
-      const fragment = document.createDocumentFragment();
-      for (let i = 0; i < calculation.visibleSubnets; i++) {
-        const offset = i * Math.pow(2, 32 - calculation.newCidr);
-        const subNetwork = calculation.network + offset;
-        const row = document.createElement('tr');
-        const netCell = document.createElement('td');
-        const maskCell = document.createElement('td');
-        netCell.textContent = intToIp(subNetwork) + '/' + calculation.newCidr;
-        maskCell.textContent = intToIp(cidrToMask(calculation.newCidr));
-        row.appendChild(netCell);
-        row.appendChild(maskCell);
-        fragment.appendChild(row);
-      }
-      subnetTableBody.appendChild(fragment);
-      subnetResults.style.display = 'block';
-    }
-
-    subnetCalcBtn.addEventListener('click', calcSubnets);
-
-    // Event listeners for Subnet Calculator inline controls
-    document.getElementById('prevBaseNetworkBtn').addEventListener('click', jumpToPrevBaseNetwork);
-    document.getElementById('nextBaseNetworkBtn').addEventListener('click', jumpToNextBaseNetwork);
-    document.getElementById('decreaseBaseCIDRBtn').addEventListener('click', () => updateBaseCIDR(-1));
-    document.getElementById('increaseBaseCIDRBtn').addEventListener('click', () => updateBaseCIDR(1));
-    document.getElementById('decreaseNewCIDRBtn').addEventListener('click', () => updateNewCIDR(-1));
-    document.getElementById('increaseNewCIDRBtn').addEventListener('click', () => updateNewCIDR(1));
-
-
-    const macInput = document.getElementById('macInput');
-    const randomMacBtn = document.getElementById('randomMacBtn');
-    /* MAC_VENDOR_JS_START */
-    const randomVendorMacBtn = document.getElementById('randomVendorMacBtn');
-    /* MAC_VENDOR_JS_END */
-    const clearBtn = document.getElementById('clearBtn');
-    const macError = document.getElementById('macError');
-    const resultCard = document.getElementById('resultCard');
-    const formatsCard = document.getElementById('formatsCard');
-    /* MAC_VENDOR_JS_START */
-    const vendorName = document.getElementById('vendorName');
-    const matchedPrefix = document.getElementById('matchedPrefix');
-    const assignmentType = document.getElementById('assignmentType');
-    const dbStatus = document.getElementById('dbStatus');
-    /* MAC_VENDOR_JS_END */
-    const flagBadges = document.getElementById('flagBadges');
-    const formatsList = document.getElementById('formatsList');
-
-    /* MAC_VENDOR_JS_START */
-    let ouiDb = null;
-    let ouiDbLoadState = 'not loaded';
-
-    /* OUI_LOADER_JS_START */
-    async function loadOuiDb() {
-      if (ouiDb) return ouiDb;
-      try {
-        const response = await fetch('./oui-db.json', { cache: 'force-cache' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        ouiDb = await response.json();
-        ouiDbLoadState = ouiDb.generatedAt ? `loaded, generated ${ouiDb.generatedAt}` : 'loaded';
-      } catch (error) {
-        console.warn('OUI database load failed:', error);
-        ouiDb = { entries: {} };
-        ouiDbLoadState = 'not available';
-      }
-      return ouiDb;
-    }
-    /* OUI_LOADER_JS_END */
-
-    /* MAC_VENDOR_JS_END */
-
-    function normalizeMac(input) {
-      const hex = input.trim().replace(/[^0-9a-fA-F]/g, '').toUpperCase();
-      if (!hex) return { error: 'Enter a MAC address or vendor prefix.' };
-      if (hex.length < 6 || hex.length > 12) {
-        return { error: `Enter 6 to 12 hex digits for a vendor prefix or full MAC address; got ${hex.length}.` };
-      }
-      if (!/^[0-9A-F]{6,12}$/.test(hex)) return { error: 'MAC must contain only hexadecimal digits.' };
-      return { hex, isFullAddress: hex.length === 12 };
-    }
-
-    function group(hex, size, sep) {
-      return hex.match(new RegExp(`.{1,${size}}`, 'g')).join(sep);
-    }
-
-    function formatMacs(hex) {
-      const lower = hex.toLowerCase();
-      return [
-        ['Colon uppercase (MikroTik/Linux style)', group(hex, 2, ':')],
-        ['Colon lowercase', group(lower, 2, ':')],
-        ['Hyphen uppercase (D-Link style)', group(hex, 2, '-')],
-        ['Hyphen lowercase', group(lower, 2, '-')],
-        ['Cisco dotted lowercase', group(lower, 4, '.')],
-        ['Cisco dotted uppercase', group(hex, 4, '.')],
-        ['Plain uppercase', hex],
-        ['Plain lowercase', lower],
-        ['Space separated', group(hex, 2, ' ')],
-        ['0x-prefixed', '0x' + hex]
-      ];
-    }
-
-    function macFlags(hex) {
-      const firstOctet = parseInt(hex.slice(0, 2), 16);
-      return {
-        isBroadcast: hex === 'FFFFFFFFFFFF',
-        isMulticast: (firstOctet & 1) === 1,
-        isLocal: (firstOctet & 2) === 2,
-        firstOctet
-      };
-    }
-
-    /* MAC_VENDOR_JS_START */
-    function assignmentTypeForPrefix(prefix) {
-      if (prefix.length === 9) return 'MA-S / OUI-36, 36-bit prefix';
-      if (prefix.length === 7) return 'MA-M / OUI-28, 28-bit prefix';
-      if (prefix.length === 6) return 'MA-L / OUI, 24-bit prefix';
-      return `${prefix.length * 4}-bit prefix`;
-    }
-
-    function lookupVendor(db, hex) {
-      const entries = db.entries || db;
-      const prefixLengths = [9, 7, 6].filter((length) => hex.length >= length);
-      const prefixes = prefixLengths.map((length) => hex.slice(0, length));
-      for (const prefix of prefixes) {
-        const record = entries[prefix];
-        if (!record) continue;
-        if (typeof record === 'string') {
-          return { prefix, vendor: record, type: assignmentTypeForPrefix(prefix) };
-        }
-        return {
-          prefix,
-          vendor: record.vendor || record.organization || 'Unknown',
-          type: record.type || assignmentTypeForPrefix(prefix)
-        };
-      }
-      return null;
-    }
-
-    /* MAC_VENDOR_JS_END */
-
-    function renderBadges(flags, isFullAddress) {
-      flagBadges.innerHTML = '';
-      const badges = [];
-
-      if (flags.isBroadcast) {
-        badges.push(['Broadcast', 'warn']);
-      } else if (flags.isMulticast) {
-        badges.push(['Multicast / group address', 'warn']);
-      } else {
-        badges.push(['Unicast', 'ok']);
-      }
-
-      badges.push(flags.isLocal
-        ? ['Locally administered / randomized possible', 'warn']
-        : ['Globally administered', 'ok']);
-
-      badges.forEach(([text, kind]) => {
-        const badge = document.createElement('span');
-        badge.className = `badge ${kind}`;
-        badge.textContent = text;
-        flagBadges.appendChild(badge);
-      });
-    }
-
-    function copyText(text, button) {
-      if (!navigator.clipboard) {
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-      } else {
-        navigator.clipboard.writeText(text);
-      }
-      const old = button.textContent;
-      button.textContent = 'Copied';
-      setTimeout(() => button.textContent = old, 900);
-    }
-
-    function renderFormats(hex) {
-      formatsList.innerHTML = '';
-      formatMacs(hex).forEach(([label, value]) => {
-        const row = document.createElement('div');
-        row.className = 'format-row';
-
-        const labelEl = document.createElement('div');
-        labelEl.className = 'format-label';
-        labelEl.textContent = label;
-
-        const valueEl = document.createElement('div');
-        valueEl.className = 'format-value';
-        valueEl.textContent = value;
-
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'copy-button';
-        copyBtn.textContent = 'Copy';
-        copyBtn.addEventListener('click', () => copyText(value, copyBtn));
-
-        row.append(labelEl, valueEl, copyBtn);
-        formatsList.appendChild(row);
-      });
-    }
-
-    /* MAC_VENDOR_JS_START */
-    async function runLookup() {
-      macError.textContent = '';
-      const normalized = normalizeMac(macInput.value);
-      if (normalized.error) {
-        resultCard.style.display = 'none';
-        formatsCard.style.display = 'none';
-        macError.textContent = normalized.error;
-        return;
-      }
-
-      const hex = normalized.hex;
-      const flags = macFlags(hex.padEnd(12, '0'));
-      const db = await loadOuiDb();
-      const match = lookupVendor(db, hex);
-      const isFullAddress = normalized.isFullAddress;
-
-      resultCard.style.display = 'block';
-      formatsCard.style.display = isFullAddress ? 'block' : 'none';
-
-      if (isFullAddress && flags.isBroadcast) {
-        vendorName.textContent = 'Not applicable for broadcast address';
-        matchedPrefix.textContent = '—';
-        assignmentType.textContent = 'Broadcast';
-      } else if (isFullAddress && flags.isMulticast) {
-        vendorName.textContent = 'Not reliable for multicast/group address';
-        matchedPrefix.textContent = '—';
-        assignmentType.textContent = 'Multicast / group address';
-      } else if (isFullAddress && flags.isLocal) {
-        vendorName.textContent = match ? `${match.vendor} (prefix match, but MAC is local/randomized)` : 'Locally administered or randomized MAC';
-        matchedPrefix.textContent = match ? match.prefix : '—';
-        assignmentType.textContent = match ? match.type : 'Local address';
-      } else if (match) {
-        vendorName.textContent = match.vendor;
-        matchedPrefix.textContent = match.prefix;
-        assignmentType.textContent = match.type;
-      } else {
-        vendorName.textContent = 'Vendor not found in bundled database';
-        matchedPrefix.textContent = hex.length >= 6 ? hex.slice(0, Math.min(hex.length, 9)) : '—';
-        assignmentType.textContent = 'No matching MA-L/MA-M/MA-S prefix';
-      }
-
-      dbStatus.textContent = ouiDbLoadState;
-      renderBadges(flags, isFullAddress);
-      if (isFullAddress) renderFormats(hex);
-    }
-
-    /* MAC_VENDOR_JS_END */
-
-    function runFormatterOnly() {
-      macError.textContent = '';
-      const normalized = normalizeMac(macInput.value);
-      if (normalized.error) {
-        resultCard.style.display = 'none';
-        formatsCard.style.display = 'none';
-        macError.textContent = normalized.error;
-        return;
-      }
-      const hex = normalized.hex;
-      const flags = macFlags(hex.padEnd(12, '0'));
-      const isFullAddress = normalized.isFullAddress;
-      resultCard.style.display = 'block';
-      formatsCard.style.display = isFullAddress ? 'block' : 'none';
-      renderBadges(flags, isFullAddress);
-      if (isFullAddress) renderFormats(hex);
-    }
-
-    function generateRandomMac() {
-      const bytes = crypto.getRandomValues(new Uint8Array(6));
-      bytes[0] = (bytes[0] | 0x02) & 0xfe;
-      return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0').toUpperCase()).join(':');
-    }
-
-    /* MAC_VENDOR_JS_START */
-    function randomHex(length) {
-      const bytes = crypto.getRandomValues(new Uint8Array(Math.ceil(length / 2)));
-      return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0').toUpperCase()).join('').slice(0, length);
-    }
-
-    function generateRandomVendorMac(db) {
-      const entries = db.entries || db;
-      const prefixes = Object.keys(entries).filter((prefix) => /^[0-9A-F]{6,9}$/.test(prefix));
-      if (!prefixes.length) return null;
-
-      const randomIndex = crypto.getRandomValues(new Uint32Array(1))[0] % prefixes.length;
-      const prefix = prefixes[randomIndex];
-      const hex = `${prefix}${randomHex(12 - prefix.length)}`;
-      return group(hex, 2, ':');
-    }
-
-    /* MAC_VENDOR_JS_END */
-
-    randomMacBtn.addEventListener('click', () => {
-      macInput.value = generateRandomMac();
-      runLookup();
-    });
-    /* MAC_VENDOR_JS_START */
-    randomVendorMacBtn.addEventListener('click', async () => {
-      macError.textContent = '';
-      const db = await loadOuiDb();
-      const mac = generateRandomVendorMac(db);
-      if (!mac) {
-        macError.textContent = 'OUI database is not available for random vendor MAC generation.';
-        return;
-      }
-      macInput.value = mac;
-      runLookup();
-    });
-    /* MAC_VENDOR_JS_END */
-    macInput.addEventListener('input', runLookup);
-    macInput.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') runLookup();
-    });
-    clearBtn.addEventListener('click', () => {
-      macInput.value = '';
-      macInput.focus();
-      resultCard.style.display = 'none';
-      formatsCard.style.display = 'none';
-      macError.textContent = '';
-    });
-    document.querySelectorAll('.example').forEach((button) => {
-      button.addEventListener('click', () => {
-        macInput.value = button.dataset.mac;
-        runLookup();
-      });
-    });
-
-    /* MAC_VENDOR_JS_START */
-    loadOuiDb().then(runLookup);
-    /* MAC_VENDOR_JS_END */
-
-
-    /***************************************************
-     * Tab Switching
-     **************************************************/
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents  = document.querySelectorAll('.tab-content');
-    tabButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        tabButtons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const target = btn.getAttribute('data-tab');
-        tabContents.forEach(tc => {
-          tc.classList.toggle('active', tc.id === target);
-        });
-      });
-    });
-
-    /***************************************************
-     * Dark Mode Toggle
-     **************************************************/
-    const toggleDarkModeBtn = document.getElementById('toggleDarkModeBtn');
-    toggleDarkModeBtn.addEventListener('click', function () {
-      document.body.classList.toggle('dark-mode');
-    });
-
-    // Initial run for Analyzer tab
-    calculateAnalyzer();
-
-    if ('serviceWorker' in navigator && window.isSecureContext && location.protocol !== 'file:') {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then((registration) => {
-            console.log('Service worker registered:', registration.scope);
-          })
-          .catch((error) => {
-            console.warn('Service worker registration failed:', error);
-          });
-      });
-    } else {
-      console.log('Service worker is not available in this context. The app still works as a normal HTML page.');
-    }
-  </script>
+  <script src="./cidr-set-utils.js"></script>
+  <script src="./app.js"></script>
+  <div id="appVersion" class="app-version" aria-label="Application version"></div>
 </body>
 </html>

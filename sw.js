@@ -1,9 +1,9 @@
-const CACHE_NAME='ipcalc-pwa-v13';
+const CACHE_NAME='ipcalc-pwa-v18';
 const OUI_DB_PATH='/ipcalc/oui-db.json';
-const ASSETS=['./','./index.html','./oui-db.json','./manifest.json','./icon.svg','./icon-192.svg','./icon-512.svg','./theme-overrides.css','./range-controls.css','./ipv4-utils.js','./ui-enhancements.js','./range-controls.js','./standalone-builder.html','./standalone-builder.js','./standalone-builder-core.js'];
+const SHELL_ASSET_PATHS=new Set(['/ipcalc/index.html','/ipcalc/app.css','/ipcalc/app.js','/ipcalc/ipv4-utils.js','/ipcalc/cidr-set-utils.js','/index.html','/app.css','/app.js','/ipv4-utils.js','/cidr-set-utils.js']);
+const ASSETS=['./','./index.html','./app.css','./app.js','./ipv4-utils.js','./cidr-set-utils.js','./oui-db.json','./manifest.json','./icon.svg','./icon-192.svg','./icon-512.svg','./standalone-builder.html','./standalone-builder.js','./standalone-builder-core.js'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE_NAME).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
-
 
 async function standaloneSourceNetworkFirst(request){
   const requestUrl=new URL(request.url);
@@ -29,24 +29,22 @@ async function ouiStaleWhileRevalidate(e){
   return await refresh||new Response('{}',{headers:{'content-type':'application/json'}});
 }
 
-async function enhanceHtml(r){
-  if(!r||!r.ok||!(r.headers.get('content-type')||'').includes('text/html'))return r;
-  let h=await r.text();
-  for(const [n,t,z] of [
-    ['theme-overrides.css','<link rel="stylesheet" href="./theme-overrides.css">','</head>'],
-    ['range-controls.css','<link rel="stylesheet" href="./range-controls.css">','</head>'],
-    ['ipv4-utils.js','<script src="./ipv4-utils.js"></script>','</head>'],
-    ['ui-enhancements.js','<script src="./ui-enhancements.js" defer></script>','</body>'],
-    ['range-controls.js','<script src="./range-controls.js" defer></script>','</body>']])
-    if(!h.includes(n))h=h.includes(z)?h.replace(z,`  ${t}\n${z}`):`${h}\n${t}`;
-  const headers=new Headers(r.headers);headers.delete('content-length');
-  return new Response(h,{status:r.status,statusText:r.statusText,headers});
+async function shellNetworkFirst(request){
+  const c=await caches.open(CACHE_NAME);
+  try{
+    const r=await fetch(request,{cache:'no-store'});
+    if(r&&r.ok)await c.put(request,r.clone());
+    return r;
+  }catch(e){return await c.match(request)||await c.match('./index.html');}
 }
 
-async function documentNetworkFirst(q){
+async function cacheFirst(request){
   const c=await caches.open(CACHE_NAME);
-  try{const r=await enhanceHtml(await fetch(q));if(r&&r.ok)await c.put(q,r.clone());return r;}
-  catch(e){return await c.match(q)||enhanceHtml(await c.match('./index.html'));}
+  const cached=await c.match(request);
+  if(cached)return cached;
+  const r=await fetch(request);
+  if(r&&r.status===200&&r.type==='basic')await c.put(request,r.clone());
+  return r;
 }
 
 self.addEventListener('fetch',e=>{
@@ -54,6 +52,6 @@ self.addEventListener('fetch',e=>{
   const u=new URL(e.request.url);if(u.origin!==self.location.origin)return;
   if(u.searchParams.has('standalone-source'))return e.respondWith(standaloneSourceNetworkFirst(e.request));
   if(u.pathname===OUI_DB_PATH||u.pathname.endsWith('/oui-db.json'))return e.respondWith(ouiStaleWhileRevalidate(e));
-  if(e.request.mode==='navigate'||e.request.destination==='document')return e.respondWith(documentNetworkFirst(e.request));
-  e.respondWith(caches.match(e.request).then(x=>x||fetch(e.request).then(r=>{if(r&&r.status===200&&r.type==='basic')caches.open(CACHE_NAME).then(c=>c.put(e.request,r.clone()));return r;})));
+  if(e.request.mode==='navigate'||e.request.destination==='document'||SHELL_ASSET_PATHS.has(u.pathname))return e.respondWith(shellNetworkFirst(e.request));
+  e.respondWith(cacheFirst(e.request));
 });

@@ -4,16 +4,16 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  const SOURCE_FILES = ['index.html', 'ipv4-utils.js', 'theme-overrides.css', 'range-controls.css', 'range-controls.js', 'ui-enhancements.js'];
+  const SOURCE_FILES = ['index.html', 'app.css', 'ipv4-utils.js', 'cidr-set-utils.js', 'app.js'];
   const FULL_FILENAME = 'ipcalc-standalone-full.html';
   const LITE_FILENAME = 'ipcalc-standalone-lite.html';
   const INCOMPATIBLE_INDEX_MESSAGE = 'The cached index.html is incompatible with this Standalone Builder. Reload sources from the network or clear the old site cache.';
   const MAC_MARKERS = ['MAC_VENDOR_HTML', 'MAC_VENDOR_JS'];
   const REQUIRED_INDEX_SNIPPETS = [
-    '<script src="./ipv4-utils.js"></script>',
+    '<link rel="stylesheet" href="./app.css" />', '<script src="./ipv4-utils.js"></script>', '<script src="./cidr-set-utils.js"></script>', '<script src="./app.js"></script>',
     'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone',
     'IPv4 Range to Prefix Converter',
-    'IPv4 Subnet Calculator',
+    'IPv4 Subnet Calculator', 'CIDR Set Calculator', 'Aggregated result', 'Cleaned input before aggregation',
     'data-tab="mac-vendor"',
     'id="toggleDarkModeBtn"',
     'id="analyzer"',
@@ -22,10 +22,9 @@
     'id="mac-vendor"',
     'id="macInput"',
     'id="randomMacBtn"',
-    'id="formatsList"',
-    'function runFormatterOnly()'
+    'id="formatsList"'
   ];
-  const REQUIRED_OUTPUT_SNIPPETS = ['<!DOCTYPE html>', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'data-tab="mac-vendor"'];
+  const REQUIRED_OUTPUT_SNIPPETS = ['<!DOCTYPE html>', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'CIDR Set Calculator', 'Aggregated result', 'Cleaned input before aggregation', 'data-tab="mac-vendor"'];
   const FORBIDDEN_RUNTIME_REFS = [/<script\b[^>]*\bsrc=/i, /<link\b[^>]*\brel=["']stylesheet["']/i, /<link\b[^>]*\brel=["']manifest["']/i];
   const FORBIDDEN_LOCAL_FETCHES = [/fetch\(\s*["'`]\.\//, /fetch\(\s*new Request\(\s*["'`]\.\//];
 
@@ -71,15 +70,6 @@
   }
   function validateIndexSource(indexHtml) {
     if (typeof indexHtml !== 'string' || !indexHtml.trim()) failIncompatible('empty index.html');
-    MAC_MARKERS.forEach((marker) => {
-      const starts = count(indexHtml, `${marker}_START`);
-      const ends = count(indexHtml, `${marker}_END`);
-      if (!starts || !ends) failIncompatible(`missing ${marker} markers`);
-      if (starts !== ends) failIncompatible(`unbalanced ${marker} markers`);
-    });
-    const ouiStarts = count(indexHtml, 'OUI_LOADER_JS_START');
-    const ouiEnds = count(indexHtml, 'OUI_LOADER_JS_END');
-    if (ouiStarts !== 1 || ouiEnds !== 1) failIncompatible('missing or unbalanced OUI loader markers');
     REQUIRED_INDEX_SNIPPETS.forEach((snippet) => { if (!indexHtml.includes(snippet)) failIncompatible(`missing ${snippet}`); });
     return true;
   }
@@ -91,16 +81,11 @@
       .replace(/\s*<script\b[^>]*\bsrc=["'][^"']+["'][^>]*><\/script>\s*/gi, '\n');
   }
   function inlineAssets(html, sources) {
-    const css = `<style data-standalone-source="theme-overrides.css">\n${assertSource(sources, 'theme-overrides.css')}\n</style>\n<style data-standalone-source="range-controls.css">\n${assertSource(sources, 'range-controls.css')}\n</style>`;
-    html = html.replace('</head>', () => `${css}\n</head>`);
-    const ipv4Script = `<script data-standalone-source="ipv4-utils.js">\n${assertSource(sources, 'ipv4-utils.js')}\n</script>\n  <script>\n    /***************************************************`;
-    html = html.replace('<script>\n    /***************************************************', () => ipv4Script);
-    const trailingScripts = `<script data-standalone-source="ui-enhancements.js">\n${assertSource(sources, 'ui-enhancements.js')}\n</script>\n<script data-standalone-source="range-controls.js">\n${assertSource(sources, 'range-controls.js')}\n</script>\n</body>`;
-    html = html.replace('</body>', () => trailingScripts);
+    const css = `<style data-standalone-source="app.css">\n${assertSource(sources, 'app.css')}\n</style>`;
+    html = html.replace(/\s*<link\b[^>]*href=["']\.\/app\.css["'][^>]*>\s*/i, () => `\n${css}\n`);
+    const scripts = `<script data-standalone-source="ipv4-utils.js">\n${assertSource(sources, 'ipv4-utils.js')}\n</script>\n<script data-standalone-source="cidr-set-utils.js">\n${assertSource(sources, 'cidr-set-utils.js')}\n</script>\n<script data-standalone-source="app.js">\n${assertSource(sources, 'app.js')}\n</script>`;
+    html = html.replace('  <script src="./ipv4-utils.js"></script>\n  <script src="./cidr-set-utils.js"></script>\n  <script src="./app.js"></script>\n', () => `  ${scripts}\n`);
     return html;
-  }
-  function removeServiceWorker(html) {
-    return html.replace(/\n\s*if \('serviceWorker'[\s\S]*?\n\s*}\s*(?=\n\s*<\/script>)/, '\n    console.log(\'Standalone HTML: service worker disabled.\');');
   }
   function embeddedOuiLoader(ouiJson) {
     return `/* OUI_LOADER_JS_START */\n    async function loadOuiDb() {\n      if (ouiDb) return ouiDb;\n      const embedded = document.getElementById('embedded-oui-db');\n      if (!embedded) throw new Error('Embedded OUI database is missing.');\n      ouiDb = JSON.parse(embedded.textContent);\n      ouiDbLoadState = ouiDb.generatedAt ? \`loaded, generated \${ouiDb.generatedAt}\` : 'loaded from embedded database';\n      return ouiDb;\n    }\n    /* OUI_LOADER_JS_END */`;
@@ -136,15 +121,15 @@
     if (embeddedCount !== 1) throw new Error(`Full standalone must contain exactly one embedded OUI database; found ${embeddedCount}`);
     const embeddedScriptIndex = html.indexOf('<script type="application/json" id="embedded-oui-db"');
     if (embeddedScriptIndex < 0) throw new Error('Full standalone embedded OUI database must be an application/json script');
-    const appScriptIndex = html.indexOf('/***************************************************');
+    const appScriptIndex = html.indexOf('function initApp()');
     const firstLoadIndex = html.indexOf('loadOuiDb()');
-    const initialLookupIndex = html.indexOf('loadOuiDb().then(runLookup)');
+    const initialLookupIndex = html.indexOf('runLookup();');
     if (appScriptIndex < 0) throw new Error('Full standalone application script was not found');
     if (firstLoadIndex < 0) throw new Error('Full standalone loadOuiDb call was not found');
-    if (initialLookupIndex < 0) throw new Error('Full standalone initial OUI lookup was not found');
+    if (initialLookupIndex < 0) throw new Error('Full standalone initial MAC render was not found');
     if (embeddedScriptIndex > appScriptIndex) throw new Error('Embedded OUI database must be parsed before application JavaScript');
     if (embeddedScriptIndex > firstLoadIndex) throw new Error('Embedded OUI database must appear before the first loadOuiDb call');
-    if (embeddedScriptIndex > initialLookupIndex) throw new Error('Embedded OUI database must appear before the initial lookup');
+    if (embeddedScriptIndex > initialLookupIndex) throw new Error('Embedded OUI database must appear before the initial MAC render');
   }
   function validateStandaloneOutput(html, variant, options) {
     if (variant !== 'full' && variant !== 'lite') throw new Error('variant must be full or lite');
@@ -159,7 +144,7 @@
       assertNotContains(html, ['oui-db.json', "fetch('./oui-db.json'"], 'Full standalone');
       validateEmbeddedOuiOrder(html);
     } else {
-      assertContains(html, ['function runFormatterOnly', 'Copy formats', 'Random MAC', 'Unicast', 'Multicast / group address', 'Globally administered'], 'Lite standalone');
+      assertContains(html, ['function runFormatterOnly', 'formats-table', 'Random MAC', 'Unicast', 'Multicast / group address', 'Globally administered'], 'Lite standalone');
       assertNotContains(html, ["fetch('./oui-db.json'", 'loadOuiDb', 'lookupVendor', 'embedded-oui-db', 'Random vendor MAC', 'Vendor', 'Matched prefix', 'Assignment type', 'OUI database', 'Vendor not found'], 'Lite standalone');
       if (/const\s+response\s*=\s*await\s*(?:[;\n\r]|$)/.test(html)) throw new Error('Lite standalone contains a dangling await expression');
     }
@@ -170,10 +155,9 @@
     if (variant !== 'full' && variant !== 'lite') throw new Error('variant must be full or lite');
     let html = assertSource(sources, 'index.html');
     validateIndexSource(html);
-    html = removeExternalReferences(html);
     html = inlineAssets(html, sources);
+    html = html.replace(/function initServiceWorker\(\) \{[\s\S]*?\n  \}\n\n  function createExportPanel/, "function initServiceWorker() { console.log('Standalone HTML: service worker disabled.'); }\n\n  function createExportPanel");
     html = removeExternalReferences(html);
-    html = removeServiceWorker(html);
     html = html.replace(/<html lang="en">/, '<html lang="en" data-standalone="true">');
     html = html.replace(/<title>.*?<\/title>/, `<title>IP Calculator Standalone ${variant === 'full' ? 'Full' : 'Lite'}</title>`);
     if (variant === 'full') {
