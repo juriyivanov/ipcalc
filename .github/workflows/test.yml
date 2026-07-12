@@ -16,7 +16,10 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check ipv4-utils.js
-          node --check range-controls.js
+          node --check cidr-set-utils.js
+          node --check app.js
+          node --check standalone-builder-core.js
+          node --check standalone-builder.js
           node --check sw.js
           node --check tools/check-index-inline-js.js
           node tools/check-index-inline-js.js
