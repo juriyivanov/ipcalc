@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const APP_VERSION = '0.14.0';
+  const APP_VERSION = '0.14.1';
 
   function renderAppVersion() {
     const element = document.getElementById('appVersion');
@@ -663,26 +663,38 @@
 
       function renderFormats(hex) {
         formatsList.innerHTML = '';
+        const table = document.createElement('table');
+        table.className = 'formats-table';
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        ['Format', 'Value', ''].forEach((text) => {
+          const th = document.createElement('th');
+          th.textContent = text;
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        const tbody = document.createElement('tbody');
         formatMacs(hex).forEach(([label, value]) => {
-          const row = document.createElement('div');
-          row.className = 'format-row';
-
-          const labelEl = document.createElement('div');
-          labelEl.className = 'format-label';
-          labelEl.textContent = label;
-
-          const valueEl = document.createElement('div');
-          valueEl.className = 'format-value';
-          valueEl.textContent = value;
-
+          const row = document.createElement('tr');
+          const labelCell = document.createElement('td');
+          labelCell.className = 'format-label';
+          labelCell.textContent = label;
+          const valueCell = document.createElement('td');
+          valueCell.className = 'format-value';
+          valueCell.textContent = value;
+          const actionCell = document.createElement('td');
+          actionCell.className = 'format-copy-cell';
           const copyBtn = document.createElement('button');
+          copyBtn.type = 'button';
           copyBtn.className = 'copy-button';
           copyBtn.textContent = 'Copy';
           copyBtn.addEventListener('click', () => copyText(value, copyBtn));
-
-          row.append(labelEl, valueEl, copyBtn);
-          formatsList.appendChild(row);
+          actionCell.appendChild(copyBtn);
+          row.append(labelCell, valueCell, actionCell);
+          tbody.appendChild(row);
         });
+        table.append(thead, tbody);
+        formatsList.appendChild(table);
       }
 
       /* MAC_VENDOR_JS_START */
@@ -727,7 +739,6 @@
           assignmentType.textContent = 'No matching MA-L/MA-M/MA-S prefix';
         }
 
-        dbStatus.textContent = ouiDbLoadState;
         renderBadges(flags, isFullAddress);
         if (isFullAddress) renderFormats(hex);
       }
@@ -837,5 +848,5 @@
       initServiceWorker();
   }
 
-  document.addEventListener('DOMContentLoaded', initApp);
+  document.addEventListener('DOMContentLoaded', initApp, { once: true });
 })();

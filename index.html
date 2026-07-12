@@ -84,8 +84,8 @@
       <p>Convert an IPv4 address range into one or more CIDR blocks that exactly cover the range.</p>
       <div class="form-group">
         <label for="rangeStart">Start IP:</label>
-        <div class="input-group">
-          <input type="text" id="rangeStart" placeholder="e.g. 192.168.100.0" />
+        <div class="input-group range-input-group">
+          <input type="text" id="rangeStart" value="192.168.100.0/24" data-prefix="24" placeholder="e.g. 192.168.100.0" />
           <div class="step-buttons">
             <button class="step-button" id="prevRangeStartBtn" type="button">IP−</button>
             <button class="step-button" id="nextRangeStartBtn" type="button">IP+</button>
@@ -96,8 +96,8 @@
       </div>
       <div class="form-group">
         <label for="rangeEnd">End IP:</label>
-        <div class="input-group">
-          <input type="text" id="rangeEnd" placeholder="e.g. 192.168.100.10" />
+        <div class="input-group range-input-group">
+          <input type="text" id="rangeEnd" value="192.168.100.255/24" data-prefix="24" placeholder="e.g. 192.168.100.10" />
           <div class="step-buttons">
             <button class="step-button" id="prevRangeEndBtn" type="button">IP−</button>
             <button class="step-button" id="nextRangeEndBtn" type="button">IP+</button>
@@ -204,7 +204,7 @@
     <!-- Tab Content: MAC Vendor / Formats -->
     <div class="tab-content" id="mac-vendor">
       <h2><span data-standalone-mac-heading>MAC Vendor / Formats</span></h2>
-      <p class="muted"><span data-standalone-mac-description>Enter a full MAC address or a vendor prefix in almost any common format. The formatter is fully local; vendor lookup uses the bundled offline OUI database.</span></p>
+      <p class="muted"><span data-standalone-mac-description>Enter a full MAC address or a vendor prefix in almost any common format. The formatter is fully local; vendor lookup uses the bundled offline vendor data.</span></p>
 
       <div class="form-group">
         <label for="macInput">MAC address or prefix</label>
@@ -227,24 +227,24 @@
       </div>
 
       <div class="result-card" id="resultCard" style="display: none;">
-        <h3>Result</h3>
         <div class="result-grid">
           <!-- MAC_VENDOR_HTML_START -->
           <div class="key">Vendor</div>
           <div class="value vendor-name" id="vendorName"></div>
           <div class="key">Matched prefix</div>
-          <div class="value" id="matchedPrefix"></div>
+          <!-- MAC_VENDOR_HTML_END -->
+          <div class="matched-prefix-line">
+            <!-- MAC_VENDOR_HTML_START --><span class="value" id="matchedPrefix"></span><!-- MAC_VENDOR_HTML_END -->
+            <span class="badge-row" id="flagBadges"></span>
+          </div>
+          <!-- MAC_VENDOR_HTML_START -->
           <div class="key">Assignment type</div>
           <div class="value" id="assignmentType"></div>
-          <div class="key">OUI database</div>
-          <div class="value" id="dbStatus"></div>
           <!-- MAC_VENDOR_HTML_END -->
         </div>
-        <div class="badge-row" id="flagBadges"></div>
       </div>
 
-      <div class="result-card" id="formatsCard" style="display: none;">
-        <h3>Copy formats</h3>
+      <div class="result-card formats-table-card" id="formatsCard" style="display: none;">
         <div class="formats" id="formatsList"></div>
       </div>
     </div>

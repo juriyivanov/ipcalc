@@ -144,7 +144,7 @@
       assertNotContains(html, ['oui-db.json', "fetch('./oui-db.json'"], 'Full standalone');
       validateEmbeddedOuiOrder(html);
     } else {
-      assertContains(html, ['function runFormatterOnly', 'Copy formats', 'Random MAC', 'Unicast', 'Multicast / group address', 'Globally administered'], 'Lite standalone');
+      assertContains(html, ['function runFormatterOnly', 'formats-table', 'Random MAC', 'Unicast', 'Multicast / group address', 'Globally administered'], 'Lite standalone');
       assertNotContains(html, ["fetch('./oui-db.json'", 'loadOuiDb', 'lookupVendor', 'embedded-oui-db', 'Random vendor MAC', 'Vendor', 'Matched prefix', 'Assignment type', 'OUI database', 'Vendor not found'], 'Lite standalone');
       if (/const\s+response\s*=\s*await\s*(?:[;\n\r]|$)/.test(html)) throw new Error('Lite standalone contains a dangling await expression');
     }

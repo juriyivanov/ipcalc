@@ -103,3 +103,17 @@ summary { cursor: pointer; font-weight: bold; }
 .status-summary, .cidr-status { margin: 12px 0; padding: 10px; border: 1px solid var(--panel-border); border-radius: 8px; background: var(--result-row-bg); }
 .app-version { position: fixed; right: 8px; bottom: 6px; z-index: 20; padding: 3px 7px; border: 1px solid var(--panel-border); border-radius: 5px; background: var(--panel-bg); color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; line-height: 1.2; opacity: 0.8; user-select: text; }
 @media (max-width: 640px) { body { margin: 10px; } .tabs { overflow-x: auto; } .tab-button { white-space: nowrap; } .input-group, .mac-input-row, .format-row, .result-grid, .cidr-input-grid, .export-fields { grid-template-columns: 1fr; display: grid; } .step-buttons { grid-template-columns: repeat(4, minmax(0, 1fr)); } .copy-button, .step-button { width: 100%; } .app-version { left: 8px; right: auto; } }
+.range-input-group { grid-template-columns: minmax(0, 1fr) auto; }
+.matched-prefix-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.formats-table-card { padding: 8px; }
+.formats-table { width: 100%; table-layout: fixed; }
+.formats-table .format-copy-cell { width: 72px; text-align: right; }
+@media (max-width: 640px) {
+  .formats-table thead,
+  .formats-table th:first-child,
+  .formats-table td:first-child { display: none; }
+  .formats-table { width: 100%; table-layout: auto; }
+  .formats-table td:nth-child(2) { width: auto; white-space: nowrap; overflow-x: auto; }
+  .formats-table td:last-child { width: 72px; text-align: right; }
+  .formats-table .copy-button { width: 64px; }
+}

@@ -25,13 +25,24 @@ checkScripts(lite);
 const oldRuntime = ['theme-overrides.css', 'range-controls.css', 'range-controls.js', 'ui-enhancements.js', 'list-export-ui.js'];
 hasAll(sources['index.html'], ['<link rel="stylesheet" href="./app.css" />', '<script src="./ipv4-utils.js"></script>', '<script src="./cidr-set-utils.js"></script>', '<script src="./app.js"></script>', 'id="appVersion"']);
 hasNone(sources['index.html'], [...oldRuntime, '<style>', '/***************************************************']);
-hasAll(sources['app.js'], ['const APP_VERSION', "APP_VERSION = '0.14.0'", 'function renderAppVersion()', 'function initApp()', 'document.addEventListener(\'DOMContentLoaded\', initApp)', 'function createExportPanel', 'function refresh()', "format.addEventListener('change', refresh)", "name.addEventListener('input', refresh)", "action.addEventListener('change', refresh)", 'setDisabled(!output.value)', 'function resizeOutput()', 'output.scrollHeight']);
-hasAll(sources['app.css'], ['.app-version', ':root', 'body.dark-mode', '.export-panel', '.step-buttons']);
+hasAll(sources['app.js'], ['const APP_VERSION', "APP_VERSION = '0.14.1'", 'function renderAppVersion()', 'function initApp()', 'document.addEventListener(\'DOMContentLoaded\', initApp, { once: true })', 'function createExportPanel', 'function refresh()', "format.addEventListener('change', refresh)", "name.addEventListener('input', refresh)", "action.addEventListener('change', refresh)", 'setDisabled(!output.value)', 'function resizeOutput()', 'output.scrollHeight']);
+hasAll(sources['app.css'], ['.app-version', ':root', 'body.dark-mode', '.export-panel', '.step-buttons', '.range-input-group', '.formats-table-card', '.formats-table thead', '.formats-table td:first-child']);
 hasNone(sources['index.html'], ['0.14.0']);
 oldRuntime.forEach((file) => assert(!fs.existsSync(path.join(root, file)), `${file} must be removed`));
 
-hasAll(full, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'CIDR Set Calculator', 'Aggregated result', 'Cleaned input before aggregation', 'Set analysis', 'Networks to exclude', 'Export format', 'Copy output', 'Download', 'prevRangeStartBtn', 'nextRangeStartBtn', 'decreaseRangeStartPrefixBtn', 'increaseRangeStartPrefixBtn', 'prevRangeEndBtn', 'nextRangeEndBtn', 'decreaseRangeEndPrefixBtn', 'increaseRangeEndPrefixBtn', 'Cisco prefix-list', 'MikroTik address-list', 'VyOS prefix-list', 'nftables set', 'MAC Vendor / Formats', 'embedded-oui-db', 'Random vendor MAC', "APP_VERSION = '0.14.0'"]);
-hasAll(lite, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'CIDR Set Calculator', 'Aggregated result', 'Cleaned input before aggregation', 'Set analysis', 'Export format', 'Copy output', 'Download', 'MAC Formats', 'Random MAC', 'Unicast', 'Globally administered', "APP_VERSION = '0.14.0'"]);
+['prevRangeStartBtn', 'nextRangeStartBtn', 'decreaseRangeStartPrefixBtn', 'increaseRangeStartPrefixBtn', 'prevRangeEndBtn', 'nextRangeEndBtn', 'decreaseRangeEndPrefixBtn', 'increaseRangeEndPrefixBtn'].forEach((id) => {
+  assert.strictEqual(count(sources['index.html'], `id="${id}"`), 1, `${id} should appear exactly once`);
+  assert.strictEqual(count(full, `id="${id}"`), 1, `${id} should appear exactly once in Full standalone`);
+  assert.strictEqual(count(lite, `id="${id}"`), 1, `${id} should appear exactly once in Lite standalone`);
+});
+assert.strictEqual(count(sources['index.html'], 'class="step-button"'), 8, 'Range tab should have exactly eight step buttons');
+hasAll(sources['index.html'], ['value="192.168.100.0/24"', 'value="192.168.100.255/24"', 'data-prefix="24"', 'class="input-group range-input-group"', 'class="matched-prefix-line"', 'id="flagBadges"']);
+hasNone(sources['index.html'], ['OUI database', '<h3>Result</h3>', '<h3>Copy formats</h3>']);
+hasAll(sources['app.js'], ["document.createElement('table')", "document.createElement('thead')", "document.createElement('tbody')", "document.createElement('tr')", "document.createElement('td')", 'formats-table']);
+hasNone(sources['app.js'], ['MutationObserver', 'format-row', "document.createElement('div');\n          row.className = 'format-row'", "document.createElement('button');\n        button.className = 'step-button'"]);
+
+hasAll(full, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'CIDR Set Calculator', 'Aggregated result', 'Cleaned input before aggregation', 'Set analysis', 'Networks to exclude', 'Export format', 'Copy output', 'Download', 'prevRangeStartBtn', 'nextRangeStartBtn', 'decreaseRangeStartPrefixBtn', 'increaseRangeStartPrefixBtn', 'prevRangeEndBtn', 'nextRangeEndBtn', 'decreaseRangeEndPrefixBtn', 'increaseRangeEndPrefixBtn', 'Cisco prefix-list', 'MikroTik address-list', 'VyOS prefix-list', 'nftables set', 'MAC Vendor / Formats', 'embedded-oui-db', 'Random vendor MAC', "APP_VERSION = '0.14.1'"]);
+hasAll(lite, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'CIDR Set Calculator', 'Aggregated result', 'Cleaned input before aggregation', 'Set analysis', 'Export format', 'Copy output', 'Download', 'MAC Formats', 'Random MAC', 'Unicast', 'Globally administered', "APP_VERSION = '0.14.1'"]);
 hasNone(full + lite + sources['index.html'], ['Process set', 'Subtract exclusions', 'Generate', '0 invalid lines']);
 hasNone(full + lite, oldRuntime);
 noExternal(full);
@@ -42,7 +53,7 @@ assert(lite.length < full.length * 0.7, 'Lite should be noticeably smaller than 
 assertIds(lite, ['appVersion', 'toggleDarkModeBtn', 'analyzer', 'range', 'subnet', 'cidr-set', 'mac-vendor', 'rangeStart', 'rangeEnd', 'prevRangeStartBtn', 'nextRangeStartBtn', 'decreaseRangeStartPrefixBtn', 'increaseRangeStartPrefixBtn', 'prevRangeEndBtn', 'nextRangeEndBtn', 'decreaseRangeEndPrefixBtn', 'increaseRangeEndPrefixBtn', 'cidrSetInput', 'cidrExcludeInput', 'cidrExportSource', 'macInput', 'randomMacBtn'], ['randomVendorMacBtn', 'vendorName', 'matchedPrefix', 'assignmentType', 'dbStatus']);
 
 const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
-hasAll(sw, ['ipcalc-pwa-v15', './app.css', './app.js', './ipv4-utils.js', './cidr-set-utils.js', "searchParams.has('standalone-source')", "searchParams.delete('standalone-source')", "cache:'no-store'", 'standaloneSourceNetworkFirst']);
+hasAll(sw, ['ipcalc-pwa-v16', './app.css', './app.js', './ipv4-utils.js', './cidr-set-utils.js', "searchParams.has('standalone-source')", "searchParams.delete('standalone-source')", "cache:'no-store'", 'standaloneSourceNetworkFirst']);
 hasNone(sw, ['enhanceHtml', 'response.text()', "replace('</head>'", "replace('</body>'", ...oldRuntime]);
 
 assert.deepStrictEqual(Core.SOURCE_FILES, ['index.html', 'app.css', 'ipv4-utils.js', 'cidr-set-utils.js', 'app.js']);

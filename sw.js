@@ -1,4 +1,4 @@
-const CACHE_NAME='ipcalc-pwa-v15';
+const CACHE_NAME='ipcalc-pwa-v16';
 const OUI_DB_PATH='/ipcalc/oui-db.json';
 const ASSETS=['./','./index.html','./app.css','./app.js','./ipv4-utils.js','./cidr-set-utils.js','./oui-db.json','./manifest.json','./icon.svg','./icon-192.svg','./icon-512.svg','./standalone-builder.html','./standalone-builder.js','./standalone-builder-core.js'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
