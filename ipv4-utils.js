@@ -154,7 +154,8 @@
       prefix = maskToCIDR(mask);
       if (prefix === null) return null;
     }
-    return { ip, ipText, mask, maskText: maskText.startsWith('/') ? maskText : maskText, prefix, hasEmbeddedMask: true };
+    const normalizedMaskText = maskText.includes('.') ? intToIPv4(mask) : `/${prefix}`;
+    return { ip, ipText, mask, maskText: normalizedMaskText, prefix, hasEmbeddedMask: true };
   }
 
 

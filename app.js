@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const APP_VERSION = '3.15.0';
+  const APP_VERSION = '3.15.1';
 
   function renderAppVersion() {
     const element = document.getElementById('appVersion');
@@ -54,6 +54,7 @@
     const value = (input.defaultValue || '').trim();
     if (!value) return false;
     input.value = value;
+    dispatchInput(input);
     return true;
   }
 
@@ -155,12 +156,8 @@
           analyzerResults.style.display = 'none';
           return;
         }
-        if (parsedAddress.hasEmbeddedMask) {
-          ipInput.value = parsedAddress.ipText;
-          subnetInput.value = parsedAddress.maskText.includes('.') ? parsedAddress.maskText : `/${parsedAddress.prefix}`;
-        }
         const ipInt = parsedAddress.ip;
-        if (!subnetInput.value.trim()) {
+        if (!parsedAddress.hasEmbeddedMask && !subnetInput.value.trim()) {
           subnetError.textContent = 'Enter a subnet mask.';
           analyzerResults.style.display = 'none';
           return;
@@ -272,11 +269,23 @@
         dispatchInput(subnetInput);
       }
 
+      function normalizeAnalyzerAddressInput() {
+        const parsed = parseIPv4AddressAndMask(ipInput.value);
+        if (!parsed || !parsed.hasEmbeddedMask) return;
+        ipInput.value = parsed.ipText;
+        subnetInput.value = parsed.maskText;
+        dispatchInput(ipInput);
+        dispatchInput(subnetInput);
+      }
+
       document.getElementById('copyPtrNameBtn').addEventListener('click', (event) => copyText(ptrLookupName.textContent, event.currentTarget));
       document.getElementById('copyReverseZoneBtn').addEventListener('click', (event) => copyText(reverseZone.textContent, event.currentTarget));
       document.getElementById('copyRfc2317ChildBtn').addEventListener('click', (event) => copyText(rfc2317ChildZone.textContent, event.currentTarget));
 
-      ipInput.addEventListener('input', calculateAnalyzer);
+      ipInput.addEventListener('input', () => calculateAnalyzer());
+      ipInput.addEventListener('paste', () => { setTimeout(normalizeAnalyzerAddressInput, 0); });
+      ipInput.addEventListener('blur', normalizeAnalyzerAddressInput);
+      ipInput.addEventListener('change', normalizeAnalyzerAddressInput);
       subnetInput.addEventListener('input', calculateAnalyzer);
       document.getElementById('nextSubnetBtn').addEventListener('click', jumpToNextSubnet);
       document.getElementById('prevSubnetBtn').addEventListener('click', jumpToPrevSubnet);

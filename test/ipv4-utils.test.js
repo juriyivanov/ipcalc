@@ -201,7 +201,7 @@ test('generates PTR names and reverse DNS information', () => {
 test('parses IPv4 address with optional embedded mask', () => {
   const base = ip.parseIPv4('192.168.1.10');
   assert.deepEqual(ip.parseIPv4AddressAndMask('192.168.1.10'), { ip: base, ipText: '192.168.1.10', mask: null, maskText: null, prefix: null, hasEmbeddedMask: false });
-  assert.deepEqual(ip.parseIPv4AddressAndMask('192.168.1.10/24'), { ip: base, ipText: '192.168.1.10', mask: ip.cidrToMask(24), maskText: '24', prefix: 24, hasEmbeddedMask: true });
+  assert.deepEqual(ip.parseIPv4AddressAndMask('192.168.1.10/24'), { ip: base, ipText: '192.168.1.10', mask: ip.cidrToMask(24), maskText: '/24', prefix: 24, hasEmbeddedMask: true });
   assert.deepEqual(ip.parseIPv4AddressAndMask('192.168.1.10 255.255.255.0'), { ip: base, ipText: '192.168.1.10', mask: ip.cidrToMask(24), maskText: '255.255.255.0', prefix: 24, hasEmbeddedMask: true });
   assert.deepEqual(ip.parseIPv4AddressAndMask('192.168.1.10/255.255.255.0'), { ip: base, ipText: '192.168.1.10', mask: ip.cidrToMask(24), maskText: '255.255.255.0', prefix: 24, hasEmbeddedMask: true });
   assert.equal(ip.parseIPv4AddressAndMask(' 192.168.1.10/24 ').prefix, 24);
