@@ -11,7 +11,7 @@
 - **PWA / GitHub Pages** — manifest, installable mode, offline cache и stale-while-revalidate для `oui-db.json`.
 - **Темная тема** — приложение по умолчанию открывается в темном режиме, тему можно переключить кнопкой `Toggle Mode`.
 
-IPv4 classification uses a static in-app copy of the IANA IPv4 Special-Purpose Address Registry. Ordinary unicast means the address is not in that special-purpose table; it does not guarantee allocation or current global Internet reachability. Classless reverse DNS hints follow RFC 2317 conventions and require CNAME records or equivalent configuration in the parent reverse zone.
+IPv4 classification is based on a static in-app copy of the IANA IPv4 Special-Purpose Address Registry with additional IPv4 multicast classification. Ordinary unicast means the address is not in that special-purpose table; it does not guarantee allocation or current global Internet reachability. Classless reverse DNS hints follow RFC 2317 conventions and require CNAME records or equivalent configuration in the parent reverse zone.
 
 ## Быстрый старт
 

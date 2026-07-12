@@ -11,7 +11,7 @@
   const MAC_MARKERS = ['MAC_VENDOR_HTML', 'MAC_VENDOR_JS'];
   const REQUIRED_INDEX_SNIPPETS = [
     '<script src="./ipv4-utils.js"></script>',
-    'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone',
+    'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'Absolute PTR record',
     'IPv4 Range to Prefix Converter',
     'IPv4 Subnet Calculator',
     'data-tab="mac-vendor"',
@@ -25,7 +25,7 @@
     'id="formatsList"',
     'function runFormatterOnly()'
   ];
-  const REQUIRED_OUTPUT_SNIPPETS = ['<!DOCTYPE html>', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'data-tab="mac-vendor"'];
+  const REQUIRED_OUTPUT_SNIPPETS = ['<!DOCTYPE html>', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'Absolute PTR record', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'data-tab="mac-vendor"'];
   const FORBIDDEN_RUNTIME_REFS = [/<script\b[^>]*\bsrc=/i, /<link\b[^>]*\brel=["']stylesheet["']/i, /<link\b[^>]*\brel=["']manifest["']/i];
   const FORBIDDEN_LOCAL_FETCHES = [/fetch\(\s*["'`]\.\//, /fetch\(\s*new Request\(\s*["'`]\.\//];
 

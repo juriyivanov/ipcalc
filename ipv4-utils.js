@@ -136,7 +136,7 @@
 
   const SPECIAL_IPV4_BLOCKS = [
     { network: '0.0.0.0', prefix: 32, name: 'This host on this network', category: 'Unspecified address', reference: 'RFC 1122', globallyReachable: false, forwardable: false, source: true, destination: false, reservedByProtocol: true },
-    { network: '0.0.0.0', prefix: 8, name: 'This network', category: 'This network', reference: 'RFC 1122', globallyReachable: false, forwardable: false, source: true, destination: false, reservedByProtocol: true },
+    { network: '0.0.0.0', prefix: 8, name: 'This network', category: 'This network', reference: 'RFC 791, Section 3.2', globallyReachable: false, forwardable: false, source: true, destination: false, reservedByProtocol: true },
     { network: '10.0.0.0', prefix: 8, name: 'Private-Use', category: 'Private use', reference: 'RFC 1918', globallyReachable: false, forwardable: true, source: true, destination: true, reservedByProtocol: false },
     { network: '100.64.0.0', prefix: 10, name: 'Shared Address Space', category: 'Shared Address Space / CGNAT', reference: 'RFC 6598', globallyReachable: false, forwardable: true, source: true, destination: true, reservedByProtocol: false },
     { network: '127.0.0.0', prefix: 8, name: 'Loopback', category: 'Loopback', reference: 'RFC 1122', globallyReachable: false, forwardable: false, source: false, destination: false, reservedByProtocol: true },
@@ -146,19 +146,22 @@
     { network: '192.0.0.8', prefix: 32, name: 'IPv4 dummy address', category: 'IETF protocol assignment', reference: 'RFC 7600', globallyReachable: false, forwardable: false, source: true, destination: false, reservedByProtocol: false },
     { network: '192.0.0.9', prefix: 32, name: 'Port Control Protocol Anycast', category: 'IETF protocol assignment', reference: 'RFC 7723', globallyReachable: true, forwardable: true, source: true, destination: true, reservedByProtocol: false },
     { network: '192.0.0.10', prefix: 32, name: 'Traversal Using Relays around NAT Anycast', category: 'IETF protocol assignment', reference: 'RFC 8155', globallyReachable: true, forwardable: true, source: true, destination: true, reservedByProtocol: false },
-    { network: '192.0.0.170', prefix: 32, name: 'NAT64/DNS64 Discovery', category: 'IETF protocol assignment', reference: 'RFC 8880', globallyReachable: false, forwardable: false, source: false, destination: false, reservedByProtocol: false },
-    { network: '192.0.0.171', prefix: 32, name: 'NAT64/DNS64 Discovery', category: 'IETF protocol assignment', reference: 'RFC 8880', globallyReachable: false, forwardable: false, source: false, destination: false, reservedByProtocol: false },
+    { network: '192.0.0.170', prefix: 32, name: 'NAT64/DNS64 Discovery', category: 'IETF protocol assignment', reference: 'RFC 8880, RFC 7050, Section 2.2', globallyReachable: false, forwardable: false, source: false, destination: false, reservedByProtocol: true },
+    { network: '192.0.0.171', prefix: 32, name: 'NAT64/DNS64 Discovery', category: 'IETF protocol assignment', reference: 'RFC 8880, RFC 7050, Section 2.2', globallyReachable: false, forwardable: false, source: false, destination: false, reservedByProtocol: true },
     { network: '192.0.0.0', prefix: 24, name: 'IETF Protocol Assignments', category: 'IETF protocol assignment', reference: 'RFC 6890', globallyReachable: false, forwardable: false, source: false, destination: false, reservedByProtocol: false },
     { network: '192.0.2.0', prefix: 24, name: 'Documentation (TEST-NET-1)', category: 'Documentation', reference: 'RFC 5737', globallyReachable: false, forwardable: false, source: false, destination: false, reservedByProtocol: false },
-    { network: '192.88.99.2', prefix: 32, name: '6a44-relay anycast address', category: 'IETF protocol assignment', reference: 'RFC 6751', globallyReachable: true, forwardable: true, source: true, destination: true, reservedByProtocol: false },
+    { network: '192.31.196.0', prefix: 24, name: 'AS112-v4', category: 'IETF protocol assignment', reference: 'RFC 7535', globallyReachable: true, forwardable: true, source: true, destination: true, reservedByProtocol: false },
+    { network: '192.52.193.0', prefix: 24, name: 'AMT', category: 'IETF protocol assignment', reference: 'RFC 7450', globallyReachable: true, forwardable: true, source: true, destination: true, reservedByProtocol: false },
+    { network: '192.88.99.2', prefix: 32, name: '6a44-relay anycast address', category: 'IETF protocol assignment', reference: 'RFC 6751', globallyReachable: false, forwardable: true, source: true, destination: true, reservedByProtocol: false },
     { network: '192.88.99.0', prefix: 24, name: 'Deprecated 6to4 Relay Anycast', category: 'IETF protocol assignment', reference: 'RFC 7526', globallyReachable: false, forwardable: false, source: false, destination: false, reservedByProtocol: false },
     { network: '192.168.0.0', prefix: 16, name: 'Private-Use', category: 'Private use', reference: 'RFC 1918', globallyReachable: false, forwardable: true, source: true, destination: true, reservedByProtocol: false },
+    { network: '192.175.48.0', prefix: 24, name: 'Direct Delegation AS112 Service', category: 'IETF protocol assignment', reference: 'RFC 7534', globallyReachable: true, forwardable: true, source: true, destination: true, reservedByProtocol: false },
     { network: '198.18.0.0', prefix: 15, name: 'Benchmarking', category: 'Benchmarking', reference: 'RFC 2544', globallyReachable: false, forwardable: true, source: true, destination: true, reservedByProtocol: false },
     { network: '198.51.100.0', prefix: 24, name: 'Documentation (TEST-NET-2)', category: 'Documentation', reference: 'RFC 5737', globallyReachable: false, forwardable: false, source: false, destination: false, reservedByProtocol: false },
     { network: '203.0.113.0', prefix: 24, name: 'Documentation (TEST-NET-3)', category: 'Documentation', reference: 'RFC 5737', globallyReachable: false, forwardable: false, source: false, destination: false, reservedByProtocol: false },
     { network: '224.0.0.0', prefix: 4, name: 'Multicast', category: 'Multicast', reference: 'RFC 5771', globallyReachable: false, forwardable: true, source: false, destination: true, reservedByProtocol: true },
     { network: '240.0.0.0', prefix: 4, name: 'Reserved', category: 'Reserved', reference: 'RFC 1112', globallyReachable: false, forwardable: false, source: false, destination: false, reservedByProtocol: true },
-    { network: '255.255.255.255', prefix: 32, name: 'Limited Broadcast', category: 'Limited broadcast', reference: 'RFC 919, RFC 922', globallyReachable: false, forwardable: false, source: false, destination: true, reservedByProtocol: true }
+    { network: '255.255.255.255', prefix: 32, name: 'Limited Broadcast', category: 'Limited broadcast', reference: 'RFC 8190, RFC 919, Section 7', globallyReachable: false, forwardable: false, source: false, destination: true, reservedByProtocol: true }
   ].map((block) => ({ ...block, networkInt: parseIPv4(block.network) })).sort((a, b) => b.prefix - a.prefix);
 
   function boolLabel(value, potential = false) { return potential ? 'Potentially' : (value ? 'Yes' : 'No'); }
@@ -174,8 +177,8 @@
     }
     return {
       network: null, prefix: null, block: 'Not in special-purpose registry', name: 'Not in IANA special-purpose registry', category: 'Ordinary unicast', reference: 'IANA IPv4 Special-Purpose Address Registry',
-      globallyReachable: 'potentially', forwardable: true, source: true, destination: true, reservedByProtocol: false,
-      globallyReachableLabel: 'Potentially', forwardableLabel: 'Yes', note: 'Registry classification does not confirm allocation or current Internet reachability.'
+      globallyReachable: 'potentially', forwardable: null, source: true, destination: true, reservedByProtocol: false,
+      globallyReachableLabel: 'Potentially', forwardableLabel: 'Not classified', note: 'Registry classification does not confirm allocation or current Internet reachability.'
     };
   }
 
@@ -185,32 +188,46 @@
     return intToIPv4(value).split('.').reverse().join('.') + '.in-addr.arpa.';
   }
 
+  function relativeOwnerForZone(ptrName, zone) {
+    if (!ptrName || !zone || !ptrName.endsWith(zone)) return null;
+    const owner = ptrName.slice(0, -zone.length).replace(/\.$/, '');
+    return owner || '@';
+  }
+
+  function zoneFileTemplate(zone, relativeOwner) {
+    return `$ORIGIN ${zone}\n${relativeOwner} IN PTR host.example.net.`;
+  }
+
   function reverseZoneForPrefix(input, prefixInput) {
     const ip = typeof input === 'number' ? input : parseIPv4(input);
     const prefix = typeof prefixInput === 'number' ? prefixInput : parseCIDR(prefixInput);
     if (!Number.isInteger(ip) || ip < 0 || ip > IPV4_MAX || !Number.isInteger(prefix) || prefix < 0 || prefix > 32) return null;
     const network = (ip & cidrToMask(prefix)) >>> 0;
-    const octets = intToIPv4(network).split('.');
+    const networkOctets = intToIPv4(network).split('.');
+    const ipOctets = intToIPv4(ip).split('.');
     const ptrName = ipv4ToPtrName(ip);
-    if (prefix === 32) return { kind: 'ptr', ptrName, ptrTemplate: `${octets[3]} IN PTR host.example.net.` };
+    const absolutePtrRecord = `${ptrName} IN PTR host.example.net.`;
+    if (prefix === 32) return { kind: 'ptr', ptrName, absolutePtrRecord };
     if (prefix <= 24 && prefix % 8 === 0) {
       const count = prefix / 8;
-      const zone = count === 0 ? 'in-addr.arpa.' : octets.slice(0, count).reverse().join('.') + '.in-addr.arpa.';
-      return { kind: 'zone', reverseZone: zone, ptrName, ptrTemplate: `${octets[3]} IN PTR host.example.net.` };
+      const reverseZone = count === 0 ? 'in-addr.arpa.' : networkOctets.slice(0, count).reverse().join('.') + '.in-addr.arpa.';
+      const relativeOwner = relativeOwnerForZone(ptrName, reverseZone);
+      return { kind: 'zone', ptrName, absolutePtrRecord, reverseZone, relativeOwner, zoneFileTemplate: zoneFileTemplate(reverseZone, relativeOwner) };
     }
     if (prefix < 24) {
       const boundary = Math.ceil(prefix / 8) * 8;
       const zonesRequired = 2 ** (boundary - prefix);
-      return { kind: 'multiple', message: 'Multiple octet-boundary zones required', delegationBoundary: `/${boundary}`, zonesRequired, ptrName };
+      return { kind: 'multiple', ptrName, absolutePtrRecord, message: 'Multiple octet-boundary zones required', delegationBoundary: `/${boundary}`, zonesRequired };
     }
     if (prefix > 24 && prefix < 32) {
       const size = subnetSize(prefix);
       const startLast = network & 255;
       const end = network + size - 1;
       const endLast = end & 255;
-      const parentZone = octets.slice(0, 3).reverse().join('.') + '.in-addr.arpa.';
+      const parentZone = networkOctets.slice(0, 3).reverse().join('.') + '.in-addr.arpa.';
       const suggestedChildZone = `${startLast}-${endLast}.${parentZone}`;
-      return { kind: 'rfc2317', parentZone, addressRange: `${intToIPv4(network)} – ${intToIPv4(end)}`, suggestedChildZone, note: 'Classless reverse DNS requires CNAME records in the parent reverse zone.', ptrName, ptrTemplate: `${octets[3]} IN PTR host.example.net.` };
+      const relativeOwner = ipOctets[3];
+      return { kind: 'rfc2317', ptrName, absolutePtrRecord, parentZone, relativeOwner, zoneFileTemplate: zoneFileTemplate(suggestedChildZone, relativeOwner), addressRange: `${intToIPv4(network)} – ${intToIPv4(end)}`, suggestedChildZone, note: 'Classless reverse DNS requires CNAME records in the parent reverse zone.' };
     }
     return null;
   }

@@ -264,7 +264,8 @@
         <div class="result-item" id="addressRangeRow" style="display: none;"><strong>Address range:</strong> <span id="addressRange"></span></div>
         <div class="result-item" id="rfc2317ChildRow" style="display: none;"><strong>Suggested RFC 2317 child zone:</strong> <span id="rfc2317ChildZone"></span> <button class="copy-button" id="copyRfc2317ChildBtn" type="button">Copy child zone</button></div>
         <div class="result-item" id="reverseDnsNoteRow" style="display: none;"><strong>Reverse DNS note:</strong> <span id="reverseDnsNote"></span></div>
-        <div class="result-item" id="ptrTemplateRow"><strong>BIND PTR template:</strong> <span id="ptrTemplate"></span> <button class="copy-button" id="copyPtrTemplateBtn" type="button">Copy PTR template</button></div>
+        <div class="result-item" id="ptrRecordRow"><strong>Absolute PTR record:</strong> <code id="ptrRecord"></code> <button class="copy-button" id="copyPtrRecordBtn" type="button">Copy PTR record</button><div class="small muted">Replace host.example.net. with the actual hostname.</div></div>
+        <div class="result-item" id="zoneFileTemplateRow" style="display: none;"><strong>Zone-relative PTR template:</strong> <pre><code id="zoneFileTemplate"></code></pre> <button class="copy-button" id="copyZoneFileTemplateBtn" type="button">Copy zone template</button></div>
       </div>
     </div>
 
@@ -440,8 +441,10 @@
     const rfc2317ChildZone = document.getElementById('rfc2317ChildZone');
     const reverseDnsNoteRow = document.getElementById('reverseDnsNoteRow');
     const reverseDnsNote = document.getElementById('reverseDnsNote');
-    const ptrTemplateRow = document.getElementById('ptrTemplateRow');
-    const ptrTemplate = document.getElementById('ptrTemplate');
+    const ptrRecordRow = document.getElementById('ptrRecordRow');
+    const ptrRecord = document.getElementById('ptrRecord');
+    const zoneFileTemplateRow = document.getElementById('zoneFileTemplateRow');
+    const zoneFileTemplate = document.getElementById('zoneFileTemplate');
 
     function calculateAnalyzer() {
       ipError.textContent = '';
@@ -496,7 +499,8 @@
       addressRangeRow.style.display = 'none';
       rfc2317ChildRow.style.display = 'none';
       reverseDnsNoteRow.style.display = 'none';
-      ptrTemplateRow.style.display = 'none';
+      ptrRecordRow.style.display = 'none';
+      zoneFileTemplateRow.style.display = 'none';
       if (reverseInfo.kind === 'zone') {
         reverseZone.textContent = reverseInfo.reverseZone;
         reverseZoneRow.style.display = 'block';
@@ -515,9 +519,13 @@
         rfc2317ChildRow.style.display = 'block';
         reverseDnsNoteRow.style.display = 'block';
       }
-      if (reverseInfo.ptrTemplate) {
-        ptrTemplate.textContent = reverseInfo.ptrTemplate;
-        ptrTemplateRow.style.display = 'block';
+      if (reverseInfo.absolutePtrRecord) {
+        ptrRecord.textContent = reverseInfo.absolutePtrRecord;
+        ptrRecordRow.style.display = 'block';
+      }
+      if (reverseInfo.zoneFileTemplate) {
+        zoneFileTemplate.textContent = reverseInfo.zoneFileTemplate;
+        zoneFileTemplateRow.style.display = 'block';
       }
       analyzerResults.style.display = 'block';
     }
@@ -563,7 +571,8 @@
     document.getElementById('copyPtrNameBtn').addEventListener('click', (event) => copyText(ptrLookupName.textContent, event.currentTarget));
     document.getElementById('copyReverseZoneBtn').addEventListener('click', (event) => copyText(reverseZone.textContent, event.currentTarget));
     document.getElementById('copyRfc2317ChildBtn').addEventListener('click', (event) => copyText(rfc2317ChildZone.textContent, event.currentTarget));
-    document.getElementById('copyPtrTemplateBtn').addEventListener('click', (event) => copyText(ptrTemplate.textContent, event.currentTarget));
+    document.getElementById('copyPtrRecordBtn').addEventListener('click', (event) => copyText(ptrRecord.textContent, event.currentTarget));
+    document.getElementById('copyZoneFileTemplateBtn').addEventListener('click', (event) => copyText(zoneFileTemplate.textContent, event.currentTarget));
 
     ipInput.addEventListener('input', calculateAnalyzer);
     subnetInput.addEventListener('input', calculateAnalyzer);

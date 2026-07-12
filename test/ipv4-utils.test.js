@@ -143,6 +143,9 @@ test('classifies IPv4 special-purpose blocks with longest-prefix match', () => {
     ['192.0.0.9', 'IETF protocol assignment', '192.0.0.9/32', 'Port Control Protocol Anycast'],
     ['192.0.0.170', 'IETF protocol assignment', '192.0.0.170/32', 'NAT64/DNS64 Discovery'],
     ['192.0.2.1', 'Documentation', '192.0.2.0/24', 'Documentation (TEST-NET-1)'],
+    ['192.31.196.1', 'IETF protocol assignment', '192.31.196.0/24', 'AS112-v4'],
+    ['192.52.193.1', 'IETF protocol assignment', '192.52.193.0/24', 'AMT'],
+    ['192.175.48.1', 'IETF protocol assignment', '192.175.48.0/24', 'Direct Delegation AS112 Service'],
     ['198.18.1.1', 'Benchmarking', '198.18.0.0/15', 'Benchmarking'],
     ['198.51.100.1', 'Documentation', '198.51.100.0/24', 'Documentation (TEST-NET-2)'],
     ['203.0.113.1', 'Documentation', '203.0.113.0/24', 'Documentation (TEST-NET-3)'],
@@ -159,6 +162,10 @@ test('classifies IPv4 special-purpose blocks with longest-prefix match', () => {
   }
   assert.equal(ip.classifyIPv4('192.0.0.9').prefix, 32);
   assert.equal(ip.classifyIPv4('192.0.0.1').block, '192.0.0.0/29');
+  assert.equal(ip.classifyIPv4('192.88.99.2').globallyReachableLabel, 'No');
+  assert.equal(ip.classifyIPv4('192.0.0.170').reservedByProtocol, true);
+  assert.equal(ip.classifyIPv4('192.0.0.171').reservedByProtocol, true);
+  assert.equal(ip.classifyIPv4('8.8.8.8').forwardableLabel, 'Not classified');
 });
 
 test('generates PTR names and reverse DNS information', () => {
@@ -168,13 +175,22 @@ test('generates PTR names and reverse DNS information', () => {
   assert.equal(ip.reverseZoneForPrefix('10.20.30.40', 8).reverseZone, '10.in-addr.arpa.');
   assert.equal(ip.reverseZoneForPrefix('10.20.30.40', 16).reverseZone, '20.10.in-addr.arpa.');
   assert.equal(ip.reverseZoneForPrefix('10.20.30.40', 24).reverseZone, '30.20.10.in-addr.arpa.');
+  assert.equal(ip.reverseZoneForPrefix('192.168.10.25', 24).absolutePtrRecord, '25.10.168.192.in-addr.arpa. IN PTR host.example.net.');
+  assert.equal(ip.reverseZoneForPrefix('192.168.10.25', 24).relativeOwner, '25');
+  assert.equal(ip.reverseZoneForPrefix('192.168.10.25', 16).relativeOwner, '25.10');
+  assert.equal(ip.reverseZoneForPrefix('192.168.10.25', 8).relativeOwner, '25.10.168');
+  assert.equal(ip.reverseZoneForPrefix('192.168.10.25', 0).relativeOwner, '25.10.168.192');
+  assert.notEqual(ip.reverseZoneForPrefix('192.168.1.25', 24).absolutePtrRecord, '0 IN PTR host.example.net.');
   assert.equal(ip.reverseZoneForPrefix('0.0.0.0', 0).reverseZone, 'in-addr.arpa.');
   assert.equal(ip.reverseZoneForPrefix('8.8.8.8', 32).ptrName, '8.8.8.8.in-addr.arpa.');
 
-  const rfc2317 = ip.reverseZoneForPrefix('192.0.2.128', 26);
+  const rfc2317 = ip.reverseZoneForPrefix('192.0.2.130', 26);
   assert.equal(rfc2317.parentZone, '2.0.192.in-addr.arpa.');
   assert.equal(rfc2317.addressRange, '192.0.2.128 – 192.0.2.191');
   assert.equal(rfc2317.suggestedChildZone, '128-191.2.0.192.in-addr.arpa.');
+  assert.equal(rfc2317.relativeOwner, '130');
+  assert.equal(rfc2317.absolutePtrRecord, '130.2.0.192.in-addr.arpa. IN PTR host.example.net.');
+  assert.equal(rfc2317.zoneFileTemplate, '$ORIGIN 128-191.2.0.192.in-addr.arpa.\n130 IN PTR host.example.net.');
 
   const multiple9 = ip.reverseZoneForPrefix('10.0.0.0', 9);
   assert.equal(multiple9.kind, 'multiple');
