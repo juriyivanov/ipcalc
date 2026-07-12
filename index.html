@@ -250,6 +250,20 @@
         <div class="result-item"><strong>Total Hosts:</strong> <span id="totalHosts"></span></div>
         <div class="result-item"><strong>Subnet Mask:</strong> <span id="subnetOutput"></span></div>
         <div class="result-item"><strong>Wildcard Mask:</strong> <span id="wildcardMask"></span></div>
+        <div class="result-item"><strong>Address type:</strong> <span id="addressType"></span></div>
+        <div class="result-item"><strong>Special-purpose block:</strong> <span id="specialBlock"></span></div>
+        <div class="result-item"><strong>Reference:</strong> <span id="specialReference"></span></div>
+        <div class="result-item"><strong>Globally reachable:</strong> <span id="globallyReachable"></span></div>
+        <div class="result-item"><strong>Forwardable:</strong> <span id="forwardable"></span></div>
+        <div class="result-item" id="classificationNoteRow" style="display: none;"><strong>Note:</strong> <span id="classificationNote"></span></div>
+        <div class="result-item"><strong>PTR lookup name:</strong> <span id="ptrLookupName"></span> <button class="copy-button" id="copyPtrNameBtn" type="button">Copy PTR name</button></div>
+        <div class="result-item" id="reverseZoneRow"><strong>Reverse zone:</strong> <span id="reverseZone"></span> <button class="copy-button" id="copyReverseZoneBtn" type="button">Copy reverse zone</button></div>
+        <div class="result-item" id="reverseDelegationRow" style="display: none;"><strong>Reverse delegation:</strong> <span id="reverseDelegation"></span></div>
+        <div class="result-item" id="delegationBoundaryRow" style="display: none;"><strong>Delegation boundary:</strong> <span id="delegationBoundary"></span></div>
+        <div class="result-item" id="parentReverseZoneRow" style="display: none;"><strong>Parent reverse zone:</strong> <span id="parentReverseZone"></span></div>
+        <div class="result-item" id="addressRangeRow" style="display: none;"><strong>Address range:</strong> <span id="addressRange"></span></div>
+        <div class="result-item" id="rfc2317ChildRow" style="display: none;"><strong>Suggested RFC 2317 child zone:</strong> <span id="rfc2317ChildZone"></span> <button class="copy-button" id="copyRfc2317ChildBtn" type="button">Copy child zone</button></div>
+        <div class="result-item" id="reverseDnsNoteRow" style="display: none;"><strong>Reverse DNS note:</strong> <span id="reverseDnsNote"></span></div>
       </div>
     </div>
 
@@ -384,7 +398,7 @@
     /***************************************************
      * General IP Utilities
      **************************************************/
-    const { IPV4_MAX, SUBNET_RENDER_LIMIT, parseIPv4, intToIPv4, parseCIDR, cidrToMask, maskToCIDR, parseSubnet, parseIPv4WithPrefix, safeSubnetStep, rangeToSubnets, prepareSubnetCalculation } = window.IPv4Utils;
+    const { IPV4_MAX, SUBNET_RENDER_LIMIT, parseIPv4, intToIPv4, parseCIDR, cidrToMask, maskToCIDR, parseSubnet, parseIPv4WithPrefix, safeSubnetStep, rangeToSubnets, prepareSubnetCalculation, classifyIPv4, ipv4ToPtrName, reverseZoneForPrefix } = window.IPv4Utils;
     const ipToInt = parseIPv4;
     const intToIp = intToIPv4;
 
@@ -403,6 +417,28 @@
     const totalHosts      = document.getElementById('totalHosts');
     const subnetOutput    = document.getElementById('subnetOutput');
     const wildcardMask    = document.getElementById('wildcardMask');
+    const addressType = document.getElementById('addressType');
+    const specialBlock = document.getElementById('specialBlock');
+    const specialReference = document.getElementById('specialReference');
+    const globallyReachable = document.getElementById('globallyReachable');
+    const forwardable = document.getElementById('forwardable');
+    const classificationNoteRow = document.getElementById('classificationNoteRow');
+    const classificationNote = document.getElementById('classificationNote');
+    const ptrLookupName = document.getElementById('ptrLookupName');
+    const reverseZoneRow = document.getElementById('reverseZoneRow');
+    const reverseZone = document.getElementById('reverseZone');
+    const reverseDelegationRow = document.getElementById('reverseDelegationRow');
+    const reverseDelegation = document.getElementById('reverseDelegation');
+    const delegationBoundaryRow = document.getElementById('delegationBoundaryRow');
+    const delegationBoundary = document.getElementById('delegationBoundary');
+    const parentReverseZoneRow = document.getElementById('parentReverseZoneRow');
+    const parentReverseZone = document.getElementById('parentReverseZone');
+    const addressRangeRow = document.getElementById('addressRangeRow');
+    const addressRange = document.getElementById('addressRange');
+    const rfc2317ChildRow = document.getElementById('rfc2317ChildRow');
+    const rfc2317ChildZone = document.getElementById('rfc2317ChildZone');
+    const reverseDnsNoteRow = document.getElementById('reverseDnsNoteRow');
+    const reverseDnsNote = document.getElementById('reverseDnsNote');
 
     function calculateAnalyzer() {
       ipError.textContent = '';
@@ -438,6 +474,43 @@
       totalHosts.textContent       = total;
       subnetOutput.textContent     = intToIp(mask) + " (/" + cidr + ")";
       wildcardMask.textContent     = intToIp(wildcard);
+
+      const classification = classifyIPv4(ipInt);
+      addressType.textContent = classification.category + (classification.name && classification.name !== classification.category ? ' / ' + classification.name : '');
+      specialBlock.textContent = classification.block;
+      specialReference.textContent = classification.reference;
+      globallyReachable.textContent = classification.globallyReachableLabel;
+      forwardable.textContent = classification.forwardableLabel;
+      classificationNoteRow.style.display = classification.note ? 'block' : 'none';
+      classificationNote.textContent = classification.note || '';
+
+      const reverseInfo = reverseZoneForPrefix(ipInt, cidr);
+      ptrLookupName.textContent = ipv4ToPtrName(ipInt);
+      reverseZoneRow.style.display = 'none';
+      reverseDelegationRow.style.display = 'none';
+      delegationBoundaryRow.style.display = 'none';
+      parentReverseZoneRow.style.display = 'none';
+      addressRangeRow.style.display = 'none';
+      rfc2317ChildRow.style.display = 'none';
+      reverseDnsNoteRow.style.display = 'none';
+      if (reverseInfo.kind === 'zone') {
+        reverseZone.textContent = reverseInfo.reverseZone;
+        reverseZoneRow.style.display = 'block';
+      } else if (reverseInfo.kind === 'multiple') {
+        reverseDelegation.textContent = reverseInfo.message + (reverseInfo.zonesRequired ? ` (${reverseInfo.zonesRequired} zones)` : '');
+        delegationBoundary.textContent = reverseInfo.delegationBoundary;
+        reverseDelegationRow.style.display = 'block';
+        delegationBoundaryRow.style.display = 'block';
+      } else if (reverseInfo.kind === 'rfc2317') {
+        parentReverseZone.textContent = reverseInfo.parentZone;
+        addressRange.textContent = reverseInfo.addressRange;
+        rfc2317ChildZone.textContent = reverseInfo.suggestedChildZone;
+        reverseDnsNote.textContent = reverseInfo.note;
+        parentReverseZoneRow.style.display = 'block';
+        addressRangeRow.style.display = 'block';
+        rfc2317ChildRow.style.display = 'block';
+        reverseDnsNoteRow.style.display = 'block';
+      }
       analyzerResults.style.display = 'block';
     }
 
@@ -478,6 +551,10 @@
       subnetInput.value = "/" + cidr;
       calculateAnalyzer();
     }
+
+    document.getElementById('copyPtrNameBtn').addEventListener('click', (event) => copyText(ptrLookupName.textContent, event.currentTarget));
+    document.getElementById('copyReverseZoneBtn').addEventListener('click', (event) => copyText(reverseZone.textContent, event.currentTarget));
+    document.getElementById('copyRfc2317ChildBtn').addEventListener('click', (event) => copyText(rfc2317ChildZone.textContent, event.currentTarget));
 
     ipInput.addEventListener('input', calculateAnalyzer);
     subnetInput.addEventListener('input', calculateAnalyzer);
