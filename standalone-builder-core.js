@@ -123,13 +123,13 @@
     if (embeddedScriptIndex < 0) throw new Error('Full standalone embedded OUI database must be an application/json script');
     const appScriptIndex = html.indexOf('function initApp()');
     const firstLoadIndex = html.indexOf('loadOuiDb()');
-    const initialLookupIndex = html.indexOf('loadOuiDb().then(runLookup)');
+    const initialLookupIndex = html.indexOf('runLookup();');
     if (appScriptIndex < 0) throw new Error('Full standalone application script was not found');
     if (firstLoadIndex < 0) throw new Error('Full standalone loadOuiDb call was not found');
-    if (initialLookupIndex < 0) throw new Error('Full standalone initial OUI lookup was not found');
+    if (initialLookupIndex < 0) throw new Error('Full standalone initial MAC render was not found');
     if (embeddedScriptIndex > appScriptIndex) throw new Error('Embedded OUI database must be parsed before application JavaScript');
     if (embeddedScriptIndex > firstLoadIndex) throw new Error('Embedded OUI database must appear before the first loadOuiDb call');
-    if (embeddedScriptIndex > initialLookupIndex) throw new Error('Embedded OUI database must appear before the initial lookup');
+    if (embeddedScriptIndex > initialLookupIndex) throw new Error('Embedded OUI database must appear before the initial MAC render');
   }
   function validateStandaloneOutput(html, variant, options) {
     if (variant !== 'full' && variant !== 'lite') throw new Error('variant must be full or lite');

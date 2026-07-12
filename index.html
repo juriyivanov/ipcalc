@@ -106,8 +106,8 @@
           </div>
         </div>
       </div>
-      <button id="convertRangeBtn">Convert Range</button>
       <div class="results" id="rangeResults" style="display: none;">
+        <div id="rangeStatus" class="range-status" role="status"></div>
         <table id="rangeTable">
           <thead>
             <tr>
@@ -214,14 +214,14 @@
         </div>
         <div class="error" id="macError"></div>
         <div class="examples small muted">
-          Examples:
-          <button class="example" data-mac="001a.2b3c.4d5e">001a.2b3c.4d5e</button>
-          <button class="example" data-mac="00-1A-2B-3C-4D-5E">00-1A-2B-3C-4D-5E</button>
-          <button class="example" data-mac="001A2B3C4D5E">001A2B3C4D5E</button>
-          <button class="example" data-mac="00:1A:2B">00:1A:2B prefix</button>
-          <button class="primary" id="randomMacBtn" type="button">Random MAC</button>
+          <span class="examples-label">Examples:</span>
+          <button class="example" data-mac="001a.2b3c.4d5e" type="button">001a.2b3c.4d5e</button>
+          <button class="example" data-mac="00-1A-2B-3C-4D-5E" type="button">00-1A-2B-3C-4D-5E</button>
+          <button class="example" data-mac="001A2B3C4D5E" type="button">001A2B3C4D5E</button>
+          <button class="example" data-mac="00:1A:2B" type="button">00:1A:2B prefix</button>
+          <button class="primary random-mac-action" id="randomMacBtn" type="button">Random MAC</button>
           <!-- MAC_VENDOR_HTML_START -->
-          <button class="primary" id="randomVendorMacBtn" type="button">Random vendor MAC</button>
+          <button class="primary random-mac-action" id="randomVendorMacBtn" type="button">Random vendor MAC</button>
           <!-- MAC_VENDOR_HTML_END -->
         </div>
       </div>

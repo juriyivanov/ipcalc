@@ -1,20 +1,28 @@
 (function () {
   'use strict';
 
-  const APP_VERSION = '0.14.1';
+  const APP_VERSION = '0.14.2';
 
   function renderAppVersion() {
     const element = document.getElementById('appVersion');
     if (element) element.textContent = `v${APP_VERSION}`;
   }
 
+  let serviceWorkerReloaded = false;
+
   function initServiceWorker() {
     if ('serviceWorker' in navigator && window.isSecureContext && location.protocol !== 'file:') {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then((registration) => { console.log('Service worker registered:', registration.scope); })
-          .catch((error) => { console.warn('Service worker registration failed:', error); });
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (serviceWorkerReloaded) return;
+        serviceWorkerReloaded = true;
+        window.location.reload();
       });
+      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+        .then((registration) => {
+          console.log('Service worker registered:', registration.scope);
+          return registration.update();
+        })
+        .catch((error) => { console.warn('Service worker registration failed:', error); });
     } else {
       console.log('Service worker is not available in this context. The app still works as a normal HTML page.');
     }
@@ -38,7 +46,7 @@
     const copy = create('button', { type: 'button', disabled: 'disabled' }, 'Copy output'), download = create('button', { type: 'button', disabled: 'disabled' }, 'Download');
     const status = create('div', { className: 'error', role: 'alert' }), output = create('textarea', { className: 'export-output', readonly: 'readonly', 'aria-label': 'Export output' });
     fields.append(formatWrap, nameWrap, actionWrap); actions.append(copy, download); container.append(fields, actions, status, output);
-    function resizeOutput() { output.style.height = 'auto'; output.style.height = `${output.scrollHeight}px`; output.style.overflowY = output.scrollHeight > output.clientHeight ? 'auto' : 'hidden'; }
+    function resizeOutput() { output.style.height = '0'; output.style.height = `${output.scrollHeight}px`; }
     function setDisabled(disabled) { copy.disabled = disabled; download.disabled = disabled; }
     function updateOptionalFields() { const f = format.value; actionWrap.hidden = !(f === 'cisco-prefix-list' || f === 'vyos-prefix-list'); nameWrap.hidden = f === 'plain'; }
     function clear() { output.value = ''; status.textContent = ''; setDisabled(true); resizeOutput(); }
@@ -225,45 +233,71 @@
       document.getElementById('decreaseMaskBtn').addEventListener('click', () => updateMask(-1));
       const rangeStart      = document.getElementById('rangeStart');
       const rangeEnd        = document.getElementById('rangeEnd');
-      const convertRangeBtn = document.getElementById('convertRangeBtn');
       const rangeResults    = document.getElementById('rangeResults');
+      const rangeStatus     = document.getElementById('rangeStatus');
+      const rangeTable      = document.getElementById('rangeTable');
+      const rangeExportPanel = document.getElementById('rangeExportPanel');
       const rangeTableBody  = document.querySelector('#rangeTable tbody');
       let rangeResultItems = [];
-      const rangeExport = createExportPanel({ container: document.getElementById('rangeExportPanel'), getItems: () => rangeResultItems, defaultName: 'RANGE_NETWORKS' });
+      const rangeExport = createExportPanel({ container: rangeExportPanel, getItems: () => rangeResultItems, defaultName: 'RANGE_NETWORKS' });
 
-      function convertRange() {
+      function setRangeStatus(message) {
+        rangeStatus.textContent = message || '';
+        rangeStatus.className = message ? 'range-status is-error' : 'range-status';
+      }
+
+      function clearRangeOutput() {
         rangeTableBody.innerHTML = '';
-        rangeResults.style.display = 'none';
         rangeResultItems = [];
         rangeExport.clear();
+      }
 
-        const startParsed = parseIPv4WithPrefix(rangeStart.value.trim(), Number(rangeStart.dataset.prefix || 24));
-        const endParsed = parseIPv4WithPrefix(rangeEnd.value.trim(), Number(rangeEnd.dataset.prefix || 24));
-        const startInt = startParsed && startParsed.ip;
-        const endInt = endParsed && endParsed.ip;
+      function showRangeError(message) {
+        setRangeStatus(message);
+        rangeResults.style.display = 'block';
+        rangeTable.hidden = true;
+        rangeExportPanel.hidden = true;
+      }
+
+      function updateRangeOutput() {
+        clearRangeOutput();
+        rangeResults.style.display = 'block';
+
+        const startValue = rangeStart.value.trim();
+        const endValue = rangeEnd.value.trim();
+        if (!startValue || !endValue) {
+          showRangeError('Enter both Start IP and End IP.');
+          return;
+        }
+
+        const startParsed = parseIPv4WithPrefix(startValue, Number(rangeStart.dataset.prefix || 24));
+        const endParsed = parseIPv4WithPrefix(endValue, Number(rangeEnd.dataset.prefix || 24));
         if (!startParsed || !endParsed) {
-          alert('Invalid start or end IP');
+          showRangeError('Enter valid Start IP and End IP values.');
           return;
         }
+
+        const startInt = startParsed.ip;
+        const endInt = endParsed.ip;
         if (startInt > endInt) {
-          alert('Start IP must be less than or equal to End IP');
+          showRangeError('Start IP must be less than or equal to End IP.');
           return;
         }
+
+        setRangeStatus('');
+        rangeTable.hidden = false;
+        rangeExportPanel.hidden = false;
         const subnets = rangeToSubnets(startInt, endInt);
-        rangeResultItems = subnets.map((s) => ({ network: s.network, prefix: s.prefix }));
-        subnets.forEach(s => {
+        rangeResultItems = subnets.map((item) => ({ network: item.network, prefix: item.prefix }));
+        subnets.forEach((item) => {
           const row = document.createElement('tr');
           const netCell = document.createElement('td');
           const maskCell = document.createElement('td');
-          netCell.textContent = intToIp(s.network) + '/' + s.prefix;
-          maskCell.textContent = intToIp(s.mask);
-          row.appendChild(netCell);
-          row.appendChild(maskCell);
+          netCell.textContent = `${intToIp(item.network)}/${item.prefix}`;
+          maskCell.textContent = intToIp(item.mask);
+          row.append(netCell, maskCell);
           rangeTableBody.appendChild(row);
         });
-        if (subnets.length > 0) {
-          rangeResults.style.display = 'block';
-        }
         rangeExport.refresh();
       }
 
@@ -287,10 +321,11 @@
         }
         input.dataset.prefix = String(prefix);
         input.value = formatRangeValue(ip, prefix);
-        if (parseRangeValue(rangeStart) && parseRangeValue(rangeEnd)) convertRange();
+        input.dispatchEvent(new Event('input', { bubbles: true }));
       }
 
-      convertRangeBtn.addEventListener('click', convertRange);
+      rangeStart.addEventListener('input', updateRangeOutput);
+      rangeEnd.addEventListener('input', updateRangeOutput);
       document.getElementById('prevRangeStartBtn').addEventListener('click', () => updateRangeValue(rangeStart, 'ip-down'));
       document.getElementById('nextRangeStartBtn').addEventListener('click', () => updateRangeValue(rangeStart, 'ip-up'));
       document.getElementById('decreaseRangeStartPrefixBtn').addEventListener('click', () => updateRangeValue(rangeStart, 'prefix-down'));
@@ -299,6 +334,7 @@
       document.getElementById('nextRangeEndBtn').addEventListener('click', () => updateRangeValue(rangeEnd, 'ip-up'));
       document.getElementById('decreaseRangeEndPrefixBtn').addEventListener('click', () => updateRangeValue(rangeEnd, 'prefix-down'));
       document.getElementById('increaseRangeEndPrefixBtn').addEventListener('click', () => updateRangeValue(rangeEnd, 'prefix-up'));
+      updateRangeOutput();
       const baseNetworkInput = document.getElementById('baseNetwork');
       const baseCIDRInput    = document.getElementById('baseCIDR');
       const newCIDRInput     = document.getElementById('newCIDR');
@@ -569,9 +605,9 @@
       function formatMacs(hex) {
         const lower = hex.toLowerCase();
         return [
-          ['Colon uppercase (MikroTik/Linux style)', group(hex, 2, ':')],
+          ['Colon uppercase', group(hex, 2, ':'), 'MikroTik and Linux style'],
           ['Colon lowercase', group(lower, 2, ':')],
-          ['Hyphen uppercase (D-Link style)', group(hex, 2, '-')],
+          ['Hyphen uppercase', group(hex, 2, '-')],
           ['Hyphen lowercase', group(lower, 2, '-')],
           ['Cisco dotted lowercase', group(lower, 4, '.')],
           ['Cisco dotted uppercase', group(hex, 4, '.')],
@@ -674,11 +710,12 @@
         });
         thead.appendChild(headerRow);
         const tbody = document.createElement('tbody');
-        formatMacs(hex).forEach(([label, value]) => {
+        formatMacs(hex).forEach(([label, value, title]) => {
           const row = document.createElement('tr');
           const labelCell = document.createElement('td');
           labelCell.className = 'format-label';
           labelCell.textContent = label;
+          if (title) labelCell.title = title;
           const valueCell = document.createElement('td');
           valueCell.className = 'format-value';
           valueCell.textContent = value;
@@ -697,26 +734,29 @@
         formatsList.appendChild(table);
       }
 
-      /* MAC_VENDOR_JS_START */
-      async function runLookup() {
-        macError.textContent = '';
-        const normalized = normalizeMac(macInput.value);
-        if (normalized.error) {
-          resultCard.style.display = 'none';
-          formatsCard.style.display = 'none';
-          macError.textContent = normalized.error;
-          return;
-        }
-
+      function renderMacBaseResult(normalized) {
         const hex = normalized.hex;
         const flags = macFlags(hex.padEnd(12, '0'));
-        const db = await loadOuiDb();
-        const match = lookupVendor(db, hex);
         const isFullAddress = normalized.isFullAddress;
 
         resultCard.style.display = 'block';
         formatsCard.style.display = isFullAddress ? 'block' : 'none';
+        renderBadges(flags, isFullAddress);
 
+        if (isFullAddress) {
+          renderFormats(hex);
+        } else {
+          formatsList.replaceChildren();
+        }
+
+        return { hex, flags, isFullAddress };
+      }
+
+      /* MAC_VENDOR_JS_START */
+      let macLookupSequence = 0;
+
+      function renderVendorResult(state, match) {
+        const { hex, flags, isFullAddress } = state;
         if (isFullAddress && flags.isBroadcast) {
           vendorName.textContent = 'Not applicable for broadcast address';
           matchedPrefix.textContent = '—';
@@ -738,9 +778,24 @@
           matchedPrefix.textContent = hex.length >= 6 ? hex.slice(0, Math.min(hex.length, 9)) : '—';
           assignmentType.textContent = 'No matching MA-L/MA-M/MA-S prefix';
         }
+      }
 
-        renderBadges(flags, isFullAddress);
-        if (isFullAddress) renderFormats(hex);
+      async function runLookup() {
+        const sequence = ++macLookupSequence;
+        macError.textContent = '';
+        const normalized = normalizeMac(macInput.value);
+        if (normalized.error) {
+          resultCard.style.display = 'none';
+          formatsCard.style.display = 'none';
+          macError.textContent = normalized.error;
+          return;
+        }
+
+        const state = renderMacBaseResult(normalized);
+        const db = await loadOuiDb();
+        if (sequence !== macLookupSequence) return;
+        const match = lookupVendor(db, state.hex);
+        renderVendorResult(state, match);
       }
 
       /* MAC_VENDOR_JS_END */
@@ -754,13 +809,7 @@
           macError.textContent = normalized.error;
           return;
         }
-        const hex = normalized.hex;
-        const flags = macFlags(hex.padEnd(12, '0'));
-        const isFullAddress = normalized.isFullAddress;
-        resultCard.style.display = 'block';
-        formatsCard.style.display = isFullAddress ? 'block' : 'none';
-        renderBadges(flags, isFullAddress);
-        if (isFullAddress) renderFormats(hex);
+        renderMacBaseResult(normalized);
       }
 
       function generateRandomMac() {
@@ -823,9 +872,7 @@
         });
       });
 
-      /* MAC_VENDOR_JS_START */
-      loadOuiDb().then(runLookup);
-      /* MAC_VENDOR_JS_END */
+      runLookup();
       const tabButtons = document.querySelectorAll('.tab-button');
       const tabContents  = document.querySelectorAll('.tab-content');
       tabButtons.forEach(btn => {
