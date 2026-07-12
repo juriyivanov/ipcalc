@@ -188,36 +188,23 @@
     return intToIPv4(value).split('.').reverse().join('.') + '.in-addr.arpa.';
   }
 
-  function relativeOwnerForZone(ptrName, zone) {
-    if (!ptrName || !zone || !ptrName.endsWith(zone)) return null;
-    const owner = ptrName.slice(0, -zone.length).replace(/\.$/, '');
-    return owner || '@';
-  }
-
-  function zoneFileTemplate(zone, relativeOwner) {
-    return `$ORIGIN ${zone}\n${relativeOwner} IN PTR host.example.net.`;
-  }
-
   function reverseZoneForPrefix(input, prefixInput) {
     const ip = typeof input === 'number' ? input : parseIPv4(input);
     const prefix = typeof prefixInput === 'number' ? prefixInput : parseCIDR(prefixInput);
     if (!Number.isInteger(ip) || ip < 0 || ip > IPV4_MAX || !Number.isInteger(prefix) || prefix < 0 || prefix > 32) return null;
     const network = (ip & cidrToMask(prefix)) >>> 0;
     const networkOctets = intToIPv4(network).split('.');
-    const ipOctets = intToIPv4(ip).split('.');
     const ptrName = ipv4ToPtrName(ip);
-    const absolutePtrRecord = `${ptrName} IN PTR host.example.net.`;
-    if (prefix === 32) return { kind: 'ptr', ptrName, absolutePtrRecord };
+    if (prefix === 32) return { kind: 'ptr', ptrName };
     if (prefix <= 24 && prefix % 8 === 0) {
       const count = prefix / 8;
       const reverseZone = count === 0 ? 'in-addr.arpa.' : networkOctets.slice(0, count).reverse().join('.') + '.in-addr.arpa.';
-      const relativeOwner = relativeOwnerForZone(ptrName, reverseZone);
-      return { kind: 'zone', ptrName, absolutePtrRecord, reverseZone, relativeOwner, zoneFileTemplate: zoneFileTemplate(reverseZone, relativeOwner) };
+      return { kind: 'zone', ptrName, reverseZone };
     }
     if (prefix < 24) {
       const boundary = Math.ceil(prefix / 8) * 8;
       const zonesRequired = 2 ** (boundary - prefix);
-      return { kind: 'multiple', ptrName, absolutePtrRecord, message: 'Multiple octet-boundary zones required', delegationBoundary: `/${boundary}`, zonesRequired };
+      return { kind: 'multiple', ptrName, message: 'Multiple octet-boundary zones required', delegationBoundary: `/${boundary}`, zonesRequired };
     }
     if (prefix > 24 && prefix < 32) {
       const size = subnetSize(prefix);
@@ -226,11 +213,11 @@
       const endLast = end & 255;
       const parentZone = networkOctets.slice(0, 3).reverse().join('.') + '.in-addr.arpa.';
       const suggestedChildZone = `${startLast}-${endLast}.${parentZone}`;
-      const relativeOwner = ipOctets[3];
-      return { kind: 'rfc2317', ptrName, absolutePtrRecord, parentZone, relativeOwner, zoneFileTemplate: zoneFileTemplate(suggestedChildZone, relativeOwner), addressRange: `${intToIPv4(network)} – ${intToIPv4(end)}`, suggestedChildZone, note: 'Classless reverse DNS requires CNAME records in the parent reverse zone.' };
+      return { kind: 'rfc2317', ptrName, parentZone, addressRange: `${intToIPv4(network)} – ${intToIPv4(end)}`, suggestedChildZone, note: 'Classless reverse DNS requires CNAME records in the parent reverse zone.' };
     }
     return null;
   }
+
 
   function calculationError(error, message) {
     return { ok: false, error, message };

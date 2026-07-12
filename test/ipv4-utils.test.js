@@ -175,12 +175,6 @@ test('generates PTR names and reverse DNS information', () => {
   assert.equal(ip.reverseZoneForPrefix('10.20.30.40', 8).reverseZone, '10.in-addr.arpa.');
   assert.equal(ip.reverseZoneForPrefix('10.20.30.40', 16).reverseZone, '20.10.in-addr.arpa.');
   assert.equal(ip.reverseZoneForPrefix('10.20.30.40', 24).reverseZone, '30.20.10.in-addr.arpa.');
-  assert.equal(ip.reverseZoneForPrefix('192.168.10.25', 24).absolutePtrRecord, '25.10.168.192.in-addr.arpa. IN PTR host.example.net.');
-  assert.equal(ip.reverseZoneForPrefix('192.168.10.25', 24).relativeOwner, '25');
-  assert.equal(ip.reverseZoneForPrefix('192.168.10.25', 16).relativeOwner, '25.10');
-  assert.equal(ip.reverseZoneForPrefix('192.168.10.25', 8).relativeOwner, '25.10.168');
-  assert.equal(ip.reverseZoneForPrefix('192.168.10.25', 0).relativeOwner, '25.10.168.192');
-  assert.notEqual(ip.reverseZoneForPrefix('192.168.1.25', 24).absolutePtrRecord, '0 IN PTR host.example.net.');
   assert.equal(ip.reverseZoneForPrefix('0.0.0.0', 0).reverseZone, 'in-addr.arpa.');
   assert.equal(ip.reverseZoneForPrefix('8.8.8.8', 32).ptrName, '8.8.8.8.in-addr.arpa.');
 
@@ -188,9 +182,6 @@ test('generates PTR names and reverse DNS information', () => {
   assert.equal(rfc2317.parentZone, '2.0.192.in-addr.arpa.');
   assert.equal(rfc2317.addressRange, '192.0.2.128 – 192.0.2.191');
   assert.equal(rfc2317.suggestedChildZone, '128-191.2.0.192.in-addr.arpa.');
-  assert.equal(rfc2317.relativeOwner, '130');
-  assert.equal(rfc2317.absolutePtrRecord, '130.2.0.192.in-addr.arpa. IN PTR host.example.net.');
-  assert.equal(rfc2317.zoneFileTemplate, '$ORIGIN 128-191.2.0.192.in-addr.arpa.\n130 IN PTR host.example.net.');
 
   const multiple9 = ip.reverseZoneForPrefix('10.0.0.0', 9);
   assert.equal(multiple9.kind, 'multiple');

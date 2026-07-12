@@ -4,7 +4,7 @@
 
 ## Возможности
 
-- **IPv4 Address Analyzer** — строгий разбор IPv4/CIDR или dotted mask, network/broadcast/host range, wildcard, Previous/Next, кнопки изменения префикса, IPv4 special-purpose address classification, Reverse DNS / in-addr.arpa generation и RFC 2317 classless reverse delegation hints.
+- **IPv4 Address Analyzer** — строгий разбор IPv4/CIDR или dotted mask, network/broadcast/host range, wildcard, Previous/Next, кнопки изменения префикса, IPv4 special-purpose address classification, PTR lookup name generation, octet-aligned reverse zones и RFC 2317 classless reverse delegation hints.
 - **IPv4 Range to Prefix Converter** — преобразование IPv4-диапазона в минимальный набор CIDR-блоков с ограничением объёма вывода.
 - **IPv4 Subnet Calculator** — разбиение сети на подсети, вывод масок, Previous/Next и prefix controls.
 - **MAC Vendor / Formats** — нормализация MAC, copy-friendly форматы, MAC flags, Random MAC, Random vendor MAC и lookup по локальной offline OUI-базе `oui-db.json`.
