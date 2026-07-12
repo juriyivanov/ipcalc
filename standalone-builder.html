@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Standalone Builder - IP Calculator</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f8fafc; color: #1f2937; }
+    .container { max-width: 980px; margin: auto; }
+    .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .card, .status { background: white; border: 1px solid #cbd5e1; border-radius: 10px; padding: 18px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+    button { padding: 10px 12px; border-radius: 8px; border: 1px solid #2563eb; background: #3b82f6; color: white; font-weight: bold; cursor: pointer; }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    .muted { color: #475569; } .ok { color: #166534; } .error { color: #b91c1c; white-space: pre-wrap; }
+    .meta { display: grid; gap: 6px; margin: 12px 0; }
+    progress { width: 100%; height: 18px; }
+    @media (max-width: 720px) { body { margin: 12px; } .cards { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>Standalone HTML Builder</h1>
+    <p class="muted">Build self-contained IP Calculator HTML files in your browser from current same-origin app sources. Source loading is network-first with a cache-busting revision; Cache Storage is used only as an offline fallback. Downloads start only after you click a build button.</p>
+    <section class="status" aria-live="polite">
+      <strong>Source status:</strong> <span id="sourceStatus">Loading sources…</span><br />
+      <strong>Build status:</strong> <span id="buildStatus">Idle</span><br />
+      <strong>Generation date:</strong> <span id="generationDate">—</span>
+      <progress id="progress" max="100" value="0" hidden></progress>
+      <div id="error" class="error"></div>
+    </section>
+    <div class="cards">
+      <section class="card">
+        <h2>Full standalone</h2>
+        <p>IPv4 tools, MAC Formatter, MAC Vendor Lookup, Random vendor MAC, and an embedded full OUI database.</p>
+        <div class="meta">
+          <span>OUI database: <strong id="fullDb">checking…</strong></span>
+          <span>Approximate size: <strong id="fullSize">calculating…</strong></span>
+        </div>
+        <button id="buildFull" type="button" disabled>Build and download Full standalone</button>
+      </section>
+      <section class="card">
+        <h2>Lite standalone</h2>
+        <p>IPv4 tools and MAC Formatter with bit-based MAC flags. No manufacturer database and no manufacturer lookup.</p>
+        <div class="meta">
+          <span>IPv4 tools: <strong class="ok">included</strong></span>
+          <span>MAC Formatter: <strong class="ok">included</strong></span>
+          <span>Manufacturer database: <strong>not included</strong></span>
+          <span>Approximate size: <strong id="liteSize">calculating…</strong></span>
+        </div>
+        <button id="buildLite" type="button" disabled>Build and download Lite standalone</button>
+      </section>
+    </div>
+  </main>
+  <script src="./standalone-builder-core.js"></script>
+  <script src="./standalone-builder.js"></script>
+</body>
+</html>

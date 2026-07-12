@@ -2,23 +2,18 @@
 
 Этот репозиторий можно опубликовать как статическое PWA-приложение через GitHub Pages.
 
-## Что добавлено
+## Основные файлы
 
-- `index.html` — PWA-точка входа для GitHub Pages. Она загружает существующий `ipcalc2.html` и отдельную страницу MAC lookup без изменения логики старого файла.
-- `mac.html` — офлайновый MAC Vendor Lookup и конвертер MAC-адреса во все популярные форматы для копипаста в сетевое оборудование.
-- `oui-db.json` — стартовая OUI-база для тестирования. Для полноценной базы запустите `tools/build-oui-db.py`.
-- `tools/build-oui-db.py` — генератор полной offline-базы из локального systemd hwdb или публичных IEEE assignment files.
+- `index.html` — PWA-точка входа: IPv4-инструменты и вкладка **MAC Vendor / Formats**.
+- `oui-db.json` — offline OUI-база для MAC Vendor Lookup.
+- `standalone-builder.html` — браузерный генератор автономных Full/Lite HTML-файлов.
+- `standalone-builder.js` и `standalone-builder-core.js` — UI и чистая логика standalone-сборки.
+- `tools/build-oui-db.py` — генератор полной offline-базы из локального systemd hwdb, Wireshark manufacturer database или публичных IEEE assignment files.
 - `manifest.json` — манифест приложения для установки на главный экран.
-- `sw.js` — service worker для офлайн-кэша.
+- `sw.js` — service worker для офлайн-кэша и stale-while-revalidate для `oui-db.json`.
 - `icon.svg`, `icon-192.svg`, `icon-512.svg` — SVG-иконки приложения.
 
-Старый способ запуска остаётся рабочим:
-
-```bash
-xdg-open ipcalc2.html
-```
-
-PWA-функции работают при запуске через HTTPS, `localhost` или `127.0.0.1`. При открытии через `file://` service worker не регистрируется.
+PWA-функции работают при запуске через HTTPS, `localhost` или `127.0.0.1`. При открытии через `file://` service worker не регистрируется. Для `file://`-сценариев используйте standalone-файлы, созданные builder-ом.
 
 ## Проверка локально
 
@@ -63,27 +58,23 @@ aa bb cc dd ee ff
 
 ### Полная OUI-база
 
-В репозитории лежит небольшая стартовая `oui-db.json`, чтобы интерфейс можно было проверить сразу. Для нормальной базы запустите:
+Для обновления базы запустите:
 
 ```bash
 python3 tools/build-oui-db.py --pretty -o oui-db.json
 ```
 
-На Linux скрипт сначала попробует прочитать:
+Service worker кэширует `oui-db.json`, поэтому lookup будет работать офлайн после первого открытия. Для базы используется stale-while-revalidate: кэшированный файл отдаётся сразу, а свежая версия обновляется в фоне.
+
+## Standalone Builder
+
+После публикации GitHub Pages генератор будет доступен по адресу:
 
 ```text
-/usr/lib/udev/hwdb.d/20-OUI.hwdb
+https://juriyivanov.github.io/ipcalc/standalone-builder.html
 ```
 
-Если файла нет, он скачает публичные IEEE списки:
-
-```text
-https://standards-oui.ieee.org/oui/oui.txt
-https://standards-oui.ieee.org/oui28/mam.txt
-https://standards-oui.ieee.org/oui36/oui36.txt
-```
-
-После генерации закоммитьте обновлённый `oui-db.json`. Service worker кэширует этот файл, поэтому lookup будет работать офлайн после первого открытия.
+Service worker кэширует файлы builder-а и исходники приложения. Builder загружает исходники network-first с cache-busting revision и использует Cache Storage только как offline fallback; несовместимый старый `index.html` блокирует сборку с понятной ошибкой. После первого успешного открытия Lite можно собрать из кэша; Full требует доступную закэшированную или сетевую `oui-db.json`.
 
 ## Публикация через GitHub Pages
 
@@ -114,7 +105,6 @@ https://juriyivanov.github.io/ipcalc/
 ## Важные детали
 
 - Все пути относительные, чтобы приложение работало из подпапки GitHub Pages `/ipcalc/`.
-- Основная логика IPv4-калькулятора остаётся в `ipcalc2.html`.
-- Service worker кэширует `index.html`, `ipcalc2.html`, `mac.html`, `oui-db.json`, `manifest.json` и иконки.
+- Service worker кэширует PWA, builder, JS/CSS-исходники, `oui-db.json`, `manifest.json` и иконки.
 - В приложении нет серверной части, сборщика, npm-зависимостей или внешних CDN.
 - MAC lookup не отправляет введённые MAC-адреса во внешние API.

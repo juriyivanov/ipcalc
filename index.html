@@ -213,7 +213,7 @@
       <button class="tab-button active" data-tab="analyzer">IPv4 Address Analyzer</button>
       <button class="tab-button" data-tab="range">IPv4 Range to Prefix Converter</button>
       <button class="tab-button" data-tab="subnet">IPv4 Subnet Calculator</button>
-      <button class="tab-button" data-tab="mac-vendor">MAC Vendor / Formats</button>
+      <button class="tab-button" data-tab="mac-vendor"><span data-standalone-mac-tab-title>MAC Vendor / Formats</span></button>
     </div>
 
     <!-- Tab Content: IPv4 Address Analyzer -->
@@ -330,8 +330,8 @@
 
     <!-- Tab Content: MAC Vendor / Formats -->
     <div class="tab-content" id="mac-vendor">
-      <h2>MAC Vendor / Formats</h2>
-      <p class="muted">Enter a full MAC address or a vendor prefix in almost any common format. The formatter is fully local; vendor lookup uses the bundled offline OUI database.</p>
+      <h2><span data-standalone-mac-heading>MAC Vendor / Formats</span></h2>
+      <p class="muted"><span data-standalone-mac-description>Enter a full MAC address or a vendor prefix in almost any common format. The formatter is fully local; vendor lookup uses the bundled offline OUI database.</span></p>
 
       <div class="form-group">
         <label for="macInput">MAC address or prefix</label>
@@ -346,14 +346,17 @@
           <button class="example" data-mac="00-1A-2B-3C-4D-5E">00-1A-2B-3C-4D-5E</button>
           <button class="example" data-mac="001A2B3C4D5E">001A2B3C4D5E</button>
           <button class="example" data-mac="00:1A:2B">00:1A:2B prefix</button>
-          <button class="primary" id="randomMacBtn" type="button">Random</button>
+          <button class="primary" id="randomMacBtn" type="button">Random MAC</button>
+          <!-- MAC_VENDOR_HTML_START -->
           <button class="primary" id="randomVendorMacBtn" type="button">Random vendor MAC</button>
+          <!-- MAC_VENDOR_HTML_END -->
         </div>
       </div>
 
       <div class="result-card" id="resultCard" style="display: none;">
         <h3>Result</h3>
         <div class="result-grid">
+          <!-- MAC_VENDOR_HTML_START -->
           <div class="key">Vendor</div>
           <div class="value vendor-name" id="vendorName"></div>
           <div class="key">Matched prefix</div>
@@ -362,6 +365,7 @@
           <div class="value" id="assignmentType"></div>
           <div class="key">OUI database</div>
           <div class="value" id="dbStatus"></div>
+          <!-- MAC_VENDOR_HTML_END -->
         </div>
         <div class="badge-row" id="flagBadges"></div>
       </div>
@@ -634,21 +638,27 @@
 
     const macInput = document.getElementById('macInput');
     const randomMacBtn = document.getElementById('randomMacBtn');
+    /* MAC_VENDOR_JS_START */
     const randomVendorMacBtn = document.getElementById('randomVendorMacBtn');
+    /* MAC_VENDOR_JS_END */
     const clearBtn = document.getElementById('clearBtn');
     const macError = document.getElementById('macError');
     const resultCard = document.getElementById('resultCard');
     const formatsCard = document.getElementById('formatsCard');
+    /* MAC_VENDOR_JS_START */
     const vendorName = document.getElementById('vendorName');
     const matchedPrefix = document.getElementById('matchedPrefix');
     const assignmentType = document.getElementById('assignmentType');
     const dbStatus = document.getElementById('dbStatus');
+    /* MAC_VENDOR_JS_END */
     const flagBadges = document.getElementById('flagBadges');
     const formatsList = document.getElementById('formatsList');
 
+    /* MAC_VENDOR_JS_START */
     let ouiDb = null;
     let ouiDbLoadState = 'not loaded';
 
+    /* OUI_LOADER_JS_START */
     async function loadOuiDb() {
       if (ouiDb) return ouiDb;
       try {
@@ -663,6 +673,9 @@
       }
       return ouiDb;
     }
+    /* OUI_LOADER_JS_END */
+
+    /* MAC_VENDOR_JS_END */
 
     function normalizeMac(input) {
       const hex = input.trim().replace(/[^0-9a-fA-F]/g, '').toUpperCase();
@@ -704,6 +717,7 @@
       };
     }
 
+    /* MAC_VENDOR_JS_START */
     function assignmentTypeForPrefix(prefix) {
       if (prefix.length === 9) return 'MA-S / OUI-36, 36-bit prefix';
       if (prefix.length === 7) return 'MA-M / OUI-28, 28-bit prefix';
@@ -729,6 +743,8 @@
       }
       return null;
     }
+
+    /* MAC_VENDOR_JS_END */
 
     function renderBadges(flags, isFullAddress) {
       flagBadges.innerHTML = '';
@@ -794,6 +810,7 @@
       });
     }
 
+    /* MAC_VENDOR_JS_START */
     async function runLookup() {
       macError.textContent = '';
       const normalized = normalizeMac(macInput.value);
@@ -840,12 +857,33 @@
       if (isFullAddress) renderFormats(hex);
     }
 
+    /* MAC_VENDOR_JS_END */
+
+    function runFormatterOnly() {
+      macError.textContent = '';
+      const normalized = normalizeMac(macInput.value);
+      if (normalized.error) {
+        resultCard.style.display = 'none';
+        formatsCard.style.display = 'none';
+        macError.textContent = normalized.error;
+        return;
+      }
+      const hex = normalized.hex;
+      const flags = macFlags(hex.padEnd(12, '0'));
+      const isFullAddress = normalized.isFullAddress;
+      resultCard.style.display = 'block';
+      formatsCard.style.display = isFullAddress ? 'block' : 'none';
+      renderBadges(flags, isFullAddress);
+      if (isFullAddress) renderFormats(hex);
+    }
+
     function generateRandomMac() {
       const bytes = crypto.getRandomValues(new Uint8Array(6));
       bytes[0] = (bytes[0] | 0x02) & 0xfe;
       return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0').toUpperCase()).join(':');
     }
 
+    /* MAC_VENDOR_JS_START */
     function randomHex(length) {
       const bytes = crypto.getRandomValues(new Uint8Array(Math.ceil(length / 2)));
       return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0').toUpperCase()).join('').slice(0, length);
@@ -862,10 +900,13 @@
       return group(hex, 2, ':');
     }
 
+    /* MAC_VENDOR_JS_END */
+
     randomMacBtn.addEventListener('click', () => {
       macInput.value = generateRandomMac();
       runLookup();
     });
+    /* MAC_VENDOR_JS_START */
     randomVendorMacBtn.addEventListener('click', async () => {
       macError.textContent = '';
       const db = await loadOuiDb();
@@ -877,6 +918,7 @@
       macInput.value = mac;
       runLookup();
     });
+    /* MAC_VENDOR_JS_END */
     macInput.addEventListener('input', runLookup);
     macInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') runLookup();
@@ -895,7 +937,9 @@
       });
     });
 
+    /* MAC_VENDOR_JS_START */
     loadOuiDb().then(runLookup);
+    /* MAC_VENDOR_JS_END */
 
 
     /***************************************************
