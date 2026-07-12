@@ -143,3 +143,12 @@ summary { cursor: pointer; font-weight: bold; }
   .cidr-table th:nth-child(5),
   .cidr-table td:nth-child(5) { width: 22%; text-align: right; }
 }
+
+.clearable-field { position: relative; display: block; min-width: 0; }
+.clearable-field > input, .clearable-field > textarea { width: 100%; padding-right: 3rem; }
+.clearable-field > textarea { padding-top: 2rem; }
+.field-clear-button { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); min-width: 2rem; height: 1.75rem; padding: 0 0.45rem; line-height: 1; border-radius: 999px; background: var(--button-bg); color: var(--text); border: 1px solid var(--panel-border); }
+.field-clear-button:hover:not(:disabled), .field-clear-button:focus-visible { background: var(--button-hover-bg); outline: 2px solid var(--primary-bg); outline-offset: 1px; }
+.field-clear-button[hidden] { display: none; }
+.clearable-field > textarea + .field-clear-button { top: 6px; transform: none; }
+.input-group > .clearable-field, .mac-input-row > .clearable-field { min-width: 0; }

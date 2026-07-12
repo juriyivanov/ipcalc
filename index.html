@@ -34,7 +34,7 @@
       <div class="form-group">
         <label for="ipInput">IPv4 Address:</label>
         <div class="input-group">
-          <input type="text" id="ipInput" value="192.168.1.1" />
+          <span class="clearable-field"><input type="text" id="ipInput" value="192.168.1.1" /><button class="field-clear-button" type="button" aria-label="Clear IPv4 Address" title="Clear">×</button></span>
           <div class="group-buttons">
             <button id="prevSubnetBtn">–</button>
             <button id="nextSubnetBtn">+</button>
@@ -45,7 +45,7 @@
       <div class="form-group">
         <label for="subnetInput">Subnet Mask (CIDR or dotted decimal):</label>
         <div class="input-group">
-          <input type="text" id="subnetInput" value="/24" />
+          <span class="clearable-field"><input type="text" id="subnetInput" value="/24" /><button class="field-clear-button" type="button" aria-label="Clear Subnet Mask" title="Clear">×</button></span>
           <div class="group-buttons">
             <button id="decreaseMaskBtn">–</button>
             <button id="increaseMaskBtn">+</button>
@@ -85,7 +85,7 @@
       <div class="form-group">
         <label for="rangeStart">Start IP:</label>
         <div class="input-group range-input-group">
-          <input type="text" id="rangeStart" value="192.168.100.0/24" data-prefix="24" placeholder="e.g. 192.168.100.0" />
+          <span class="clearable-field"><input type="text" id="rangeStart" value="192.168.100.0/24" data-prefix="24" placeholder="e.g. 192.168.100.0" /><button class="field-clear-button" type="button" aria-label="Clear Start IP" title="Clear">×</button></span>
           <div class="step-buttons">
             <button class="step-button" id="prevRangeStartBtn" type="button">IP−</button>
             <button class="step-button" id="nextRangeStartBtn" type="button">IP+</button>
@@ -97,7 +97,7 @@
       <div class="form-group">
         <label for="rangeEnd">End IP:</label>
         <div class="input-group range-input-group">
-          <input type="text" id="rangeEnd" value="192.168.100.255/24" data-prefix="24" placeholder="e.g. 192.168.100.10" />
+          <span class="clearable-field"><input type="text" id="rangeEnd" value="192.168.100.255/24" data-prefix="24" placeholder="e.g. 192.168.100.10" /><button class="field-clear-button" type="button" aria-label="Clear End IP" title="Clear">×</button></span>
           <div class="step-buttons">
             <button class="step-button" id="prevRangeEndBtn" type="button">IP−</button>
             <button class="step-button" id="nextRangeEndBtn" type="button">IP+</button>
@@ -128,7 +128,7 @@
       <div class="form-group">
         <label for="baseNetwork">Base Network (e.g. 192.168.0.0):</label>
         <div class="input-group">
-          <input type="text" id="baseNetwork" value="192.168.0.0"/>
+          <span class="clearable-field"><input type="text" id="baseNetwork" value="192.168.0.0"/><button class="field-clear-button" type="button" aria-label="Clear Base Network" title="Clear">×</button></span>
           <div class="group-buttons">
             <button id="prevBaseNetworkBtn">–</button>
             <button id="nextBaseNetworkBtn">+</button>
@@ -138,7 +138,7 @@
       <div class="form-group">
         <label for="baseCIDR">Original CIDR (e.g. /24):</label>
         <div class="input-group">
-          <input type="text" id="baseCIDR" value="/24"/>
+          <span class="clearable-field"><input type="text" id="baseCIDR" value="/24"/><button class="field-clear-button" type="button" aria-label="Clear Original CIDR" title="Clear">×</button></span>
           <div class="group-buttons">
             <button id="decreaseBaseCIDRBtn">–</button>
             <button id="increaseBaseCIDRBtn">+</button>
@@ -148,15 +148,15 @@
       <div class="form-group">
         <label for="newCIDR">Subnetted using prefix length (e.g. /28):</label>
         <div class="input-group">
-          <input type="text" id="newCIDR" value="/28"/>
+          <span class="clearable-field"><input type="text" id="newCIDR" value="/28"/><button class="field-clear-button" type="button" aria-label="Clear New CIDR" title="Clear">×</button></span>
           <div class="group-buttons">
             <button id="decreaseNewCIDRBtn">–</button>
             <button id="increaseNewCIDRBtn">+</button>
           </div>
         </div>
       </div>
-      <button id="subnetCalcBtn">Calculate</button>
       <div class="results" id="subnetResults" style="display: none;">
+        <div id="subnetStatus" class="range-status" role="status"></div>
         <div id="subnetLimitWarning" class="result-item" style="display: none;"></div>
         <table id="subnetTable">
           <thead>
@@ -177,11 +177,11 @@
       <h2>CIDR Set Calculator</h2>
       <p>Normalize, aggregate, analyze, subtract, and export IPv4 CIDR lists.</p>
       <div class="cidr-input-grid">
-        <div class="form-group"><label for="cidrSetInput">Include networks</label><textarea id="cidrSetInput">10.0.0.0/24
+        <div class="form-group"><label for="cidrSetInput">Include networks</label><div class="clearable-field"><textarea id="cidrSetInput">10.0.0.0/24
 10.0.1.0/24
 10.0.2.0/23
-192.168.1.0/24</textarea></div>
-        <div class="form-group"><label for="cidrExcludeInput">Networks to exclude (optional)</label><textarea id="cidrExcludeInput"></textarea></div>
+192.168.1.0/24</textarea><button class="field-clear-button" type="button" aria-label="Clear Include networks" title="Clear">×</button></div></div>
+        <div class="form-group"><label for="cidrExcludeInput">Networks to exclude (optional)</label><div class="clearable-field"><textarea id="cidrExcludeInput"></textarea><button class="field-clear-button" type="button" aria-label="Clear Networks to exclude" title="Clear">×</button></div></div>
       </div>
       <div class="results" id="cidrSetResults" style="display:none;">
         <div class="cidr-status">
@@ -209,8 +209,7 @@
       <div class="form-group">
         <label for="macInput">MAC address or prefix</label>
         <div class="mac-input-row">
-          <input type="text" id="macInput" value="00:1A:2B:3C:4D:5E" autocomplete="off" spellcheck="false" inputmode="text" />
-          <button id="clearBtn">Clear</button>
+          <span class="clearable-field"><input type="text" id="macInput" value="00:1A:2B:3C:4D:5E" autocomplete="off" spellcheck="false" inputmode="text" /><button class="field-clear-button" type="button" aria-label="Clear MAC address or prefix" title="Clear">×</button></span>
         </div>
         <div class="error" id="macError"></div>
         <div class="examples small muted">
