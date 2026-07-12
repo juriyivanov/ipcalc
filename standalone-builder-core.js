@@ -4,16 +4,16 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  const SOURCE_FILES = ['index.html', 'ipv4-utils.js', 'theme-overrides.css', 'range-controls.css', 'range-controls.js', 'ui-enhancements.js'];
+  const SOURCE_FILES = ['index.html', 'ipv4-utils.js', 'cidr-set-utils.js', 'list-export-ui.js', 'theme-overrides.css', 'range-controls.css', 'range-controls.js', 'ui-enhancements.js'];
   const FULL_FILENAME = 'ipcalc-standalone-full.html';
   const LITE_FILENAME = 'ipcalc-standalone-lite.html';
   const INCOMPATIBLE_INDEX_MESSAGE = 'The cached index.html is incompatible with this Standalone Builder. Reload sources from the network or clear the old site cache.';
   const MAC_MARKERS = ['MAC_VENDOR_HTML', 'MAC_VENDOR_JS'];
   const REQUIRED_INDEX_SNIPPETS = [
-    '<script src="./ipv4-utils.js"></script>',
+    '<script src="./ipv4-utils.js"></script>', '<script src="./cidr-set-utils.js"></script>', '<script src="./list-export-ui.js"></script>',
     'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone',
     'IPv4 Range to Prefix Converter',
-    'IPv4 Subnet Calculator',
+    'IPv4 Subnet Calculator', 'CIDR Set Calculator',
     'data-tab="mac-vendor"',
     'id="toggleDarkModeBtn"',
     'id="analyzer"',
@@ -25,7 +25,7 @@
     'id="formatsList"',
     'function runFormatterOnly()'
   ];
-  const REQUIRED_OUTPUT_SNIPPETS = ['<!DOCTYPE html>', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'data-tab="mac-vendor"'];
+  const REQUIRED_OUTPUT_SNIPPETS = ['<!DOCTYPE html>', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'CIDR Set Calculator', 'data-tab="mac-vendor"'];
   const FORBIDDEN_RUNTIME_REFS = [/<script\b[^>]*\bsrc=/i, /<link\b[^>]*\brel=["']stylesheet["']/i, /<link\b[^>]*\brel=["']manifest["']/i];
   const FORBIDDEN_LOCAL_FETCHES = [/fetch\(\s*["'`]\.\//, /fetch\(\s*new Request\(\s*["'`]\.\//];
 
@@ -93,7 +93,7 @@
   function inlineAssets(html, sources) {
     const css = `<style data-standalone-source="theme-overrides.css">\n${assertSource(sources, 'theme-overrides.css')}\n</style>\n<style data-standalone-source="range-controls.css">\n${assertSource(sources, 'range-controls.css')}\n</style>`;
     html = html.replace('</head>', () => `${css}\n</head>`);
-    const ipv4Script = `<script data-standalone-source="ipv4-utils.js">\n${assertSource(sources, 'ipv4-utils.js')}\n</script>\n  <script>\n    /***************************************************`;
+    const ipv4Script = `<script data-standalone-source="ipv4-utils.js">\n${assertSource(sources, 'ipv4-utils.js')}\n</script>\n<script data-standalone-source="cidr-set-utils.js">\n${assertSource(sources, 'cidr-set-utils.js')}\n</script>\n<script data-standalone-source="list-export-ui.js">\n${assertSource(sources, 'list-export-ui.js')}\n</script>\n  <script>\n    /***************************************************`;
     html = html.replace('<script>\n    /***************************************************', () => ipv4Script);
     const trailingScripts = `<script data-standalone-source="ui-enhancements.js">\n${assertSource(sources, 'ui-enhancements.js')}\n</script>\n<script data-standalone-source="range-controls.js">\n${assertSource(sources, 'range-controls.js')}\n</script>\n</body>`;
     html = html.replace('</body>', () => trailingScripts);

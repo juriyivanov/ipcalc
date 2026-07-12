@@ -7,6 +7,8 @@
 - **IPv4 Address Analyzer** — строгий разбор IPv4/CIDR или dotted mask, network/broadcast/host range, wildcard, Previous/Next, кнопки изменения префикса, IPv4 special-purpose address classification, PTR lookup name generation, octet-aligned reverse zones и RFC 2317 classless reverse delegation hints.
 - **IPv4 Range to Prefix Converter** — преобразование IPv4-диапазона в минимальный набор CIDR-блоков с ограничением объёма вывода.
 - **IPv4 Subnet Calculator** — разбиение сети на подсети, вывод масок, Previous/Next и prefix controls.
+- **CIDR Set Calculator** — CIDR set normalization and aggregation, CIDR containment analysis, CIDR include/exclude subtraction и подсчет покрытых IPv4-адресов.
+- **Shared network configuration exports** — общий экспорт списков сетей из Range, Subnet и CIDR Set в Plain CIDR, Cisco prefix-list, MikroTik address-list, VyOS prefix-list, nftables, JSON и CSV.
 - **MAC Vendor / Formats** — нормализация MAC, copy-friendly форматы, MAC flags, Random MAC, Random vendor MAC и lookup по локальной offline OUI-базе `oui-db.json`.
 - **PWA / GitHub Pages** — manifest, installable mode, offline cache и stale-while-revalidate для `oui-db.json`.
 - **Темная тема** — приложение по умолчанию открывается в темном режиме, тему можно переключить кнопкой `Toggle Mode`.
@@ -70,12 +72,24 @@ Builder загружает текущие исходники с того же or
 2. Укажите начальный и конечный адреса диапазона, например `192.168.100.0` и `192.168.100.10`.
 3. Нажмите **Convert Range**.
 4. В таблице появится список CIDR-блоков, которые покрывают указанный диапазон.
+5. Используйте панель **Export format** для генерации конфигурации.
 
 ### Расчет подсетей
 
 1. Откройте вкладку **IPv4 Subnet Calculator**.
 2. Укажите базовую сеть, исходный CIDR и новый префикс для разбиения.
 3. Нажмите **Calculate**.
+4. Если результат не превышает 16,384 сетей, используйте панель **Export format** для экспорта полного безопасно вычисленного списка.
+
+### CIDR Set Calculator
+
+1. Откройте вкладку **CIDR Set Calculator**.
+2. Введите CIDR-список в поле **Include networks**; поддерживаются комментарии `#`, запятые, точки с запятой и dotted masks.
+3. Нажмите **Process set**, чтобы получить normalized и aggregated списки, containment relationships и mergeable adjacent pairs.
+4. При необходимости заполните **Networks to exclude (optional)** и нажмите **Subtract exclusions**.
+5. Выберите источник экспорта: **Normalized**, **Aggregated** или **Subtraction result**.
+
+Поддерживаемые форматы экспорта: Plain CIDR, Cisco prefix-list, MikroTik address-list, VyOS prefix-list, nftables, JSON и CSV.
 
 ### MAC Vendor / Formats
 
@@ -94,6 +108,8 @@ Builder загружает текущие исходники с того же or
 .
 ├── index.html                         # Основная PWA: IPv4-инструменты, MAC Vendor / Formats и навигация
 ├── ipv4-utils.js                      # Общие IPv4-утилиты, строгий разбор и тестируемые расчеты
+├── cidr-set-utils.js                  # CIDR set операции и генератор конфигураций
+├── list-export-ui.js                  # Переиспользуемая панель экспорта списков сетей
 ├── manifest.json                      # PWA manifest
 ├── sw.js                              # Service worker для офлайн-кэша
 ├── oui-db.json                        # Offline MAC vendor database
@@ -123,6 +139,8 @@ Builder загружает текущие исходники с того же or
 ## Ограничения
 
 - IPv4-калькулятор поддерживает только IPv4.
+- Large subnet exports are limited to 16,384 networks.
+- Table previews may show fewer rows than the complete safe export set.
 - Все вычисления выполняются на стороне клиента.
 - MAC vendor lookup зависит от актуальности локального `oui-db.json`.
 - Для locally administered/randomized MAC vendor может быть ненадежен или не определяться.
@@ -135,6 +153,8 @@ Builder загружает текущие исходники с того же or
 
 ```bash
 node --check ipv4-utils.js
+node --check cidr-set-utils.js
+node --check list-export-ui.js
 node --check range-controls.js
 node --check sw.js
 node --check standalone-builder.js

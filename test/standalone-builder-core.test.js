@@ -33,7 +33,7 @@ const { full, lite } = buildAndValidate();
 const forbiddenBindTemplates = ['Absolute PTR record', 'Zone-relative PTR template', 'host.example.net.', 'Copy PTR record', 'Copy zone template'];
 hasNone(sources['index.html'], forbiddenBindTemplates);
 
-hasAll(full, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'MAC Vendor / Formats', 'Copy formats', 'embedded-oui-db', 'Vendor', 'Matched prefix', 'Assignment type', 'Random vendor MAC', 'function lookupVendor']);
+hasAll(full, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'CIDR Set Calculator', 'Normalize', 'Aggregate', 'Networks to exclude', 'Export format', 'Cisco prefix-list', 'MikroTik address-list', 'VyOS prefix-list', 'nftables set', 'MAC Vendor / Formats', 'Copy formats', 'embedded-oui-db', 'Vendor', 'Matched prefix', 'Assignment type', 'Random vendor MAC', 'function lookupVendor']);
 noExternal(full);
 hasNone(full, forbiddenBindTemplates);
 assert.strictEqual(count(full, 'id="embedded-oui-db"'), 1, 'Full must contain exactly one embedded OUI database');
@@ -46,7 +46,7 @@ assert(appScriptIndex >= 0, 'application script marker must exist');
 assert(embeddedIndex < initialLookupIndex, 'embedded OUI database must appear before the initial lookup');
 assert(embeddedIndex < appScriptIndex, 'embedded OUI database must be parsed before application JavaScript');
 
-hasAll(lite, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'MAC Formats', 'Colon uppercase', 'Colon lowercase', 'Hyphen uppercase', 'Hyphen lowercase', 'Cisco dotted lowercase', 'Cisco dotted uppercase', 'Plain uppercase', 'Plain lowercase', 'Space separated', '0x-prefixed', 'Random MAC', 'Unicast', 'Multicast / group address', 'Broadcast', 'Globally administered', 'Locally administered / randomized possible', 'function runFormatterOnly']);
+hasAll(lite, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'CIDR Set Calculator', 'Normalize', 'Aggregate', 'Networks to exclude', 'Export format', 'Cisco prefix-list', 'MikroTik address-list', 'VyOS prefix-list', 'nftables set', 'MAC Formats', 'Colon uppercase', 'Colon lowercase', 'Hyphen uppercase', 'Hyphen lowercase', 'Cisco dotted lowercase', 'Cisco dotted uppercase', 'Plain uppercase', 'Plain lowercase', 'Space separated', '0x-prefixed', 'Random MAC', 'Unicast', 'Multicast / group address', 'Broadcast', 'Globally administered', 'Locally administered / randomized possible', 'function runFormatterOnly']);
 hasNone(lite, ['Vendor', 'Matched prefix', 'Assignment type', 'Random vendor MAC', 'oui-db.json', 'embedded-oui-db', 'lookupVendor', 'loadOuiDb', 'Vendor not found', 'OUI database', 'bundled vendor database']);
 noExternal(lite);
 hasNone(lite, forbiddenBindTemplates);
@@ -59,9 +59,9 @@ const builder = fs.readFileSync(path.join(root, 'standalone-builder.html'), 'utf
 hasAll(builder, ['Build and download Full standalone', 'Build and download Lite standalone']);
 
 assertIds(lite, [
-  'toggleDarkModeBtn', 'analyzer', 'range', 'subnet', 'mac-vendor', 'ipInput', 'subnetInput', 'rangeStart', 'rangeEnd',
+  'toggleDarkModeBtn', 'analyzer', 'range', 'subnet', 'cidr-set', 'mac-vendor', 'ipInput', 'subnetInput', 'rangeStart', 'rangeEnd',
   'baseNetwork', 'baseCIDR', 'newCIDR', 'convertRangeBtn', 'subnetCalcBtn', 'macInput', 'clearBtn',
-  'macError', 'resultCard', 'formatsCard', 'flagBadges', 'formatsList', 'randomMacBtn'
+  'cidrSetInput', 'cidrExcludeInput', 'cidrExportSource', 'macError', 'resultCard', 'formatsCard', 'flagBadges', 'formatsList', 'randomMacBtn'
 ], ['randomVendorMacBtn', 'vendorName', 'matchedPrefix', 'assignmentType', 'dbStatus']);
 hasAll(lite, [
   "tabButtons.forEach(btn =>", "btn.addEventListener('click'", "toggleDarkModeBtn.addEventListener('click'",
@@ -92,6 +92,8 @@ const enhanced = buildAndValidate(enhancedSources);
   assert.strictEqual(count(html, 'data-standalone-source="range-controls.css"'), 1, 'range CSS should be inlined once');
   assert.strictEqual(count(html, 'data-standalone-source="ui-enhancements.js"'), 1, 'UI JS should be inlined once');
   assert.strictEqual(count(html, 'data-standalone-source="range-controls.js"'), 1, 'range JS should be inlined once');
+  assert.strictEqual(count(html, 'data-standalone-source="cidr-set-utils.js"'), 1, 'CIDR set utils should be inlined once');
+  assert.strictEqual(count(html, 'data-standalone-source="list-export-ui.js"'), 1, 'export UI should be inlined once');
   checkScripts(html);
 });
 
@@ -106,7 +108,7 @@ assert.strictEqual(
 );
 
 const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
-hasAll(sw, ["searchParams.has('standalone-source')", "searchParams.delete('standalone-source')", "cache:'no-store'", 'standaloneSourceNetworkFirst']);
+hasAll(sw, ['cidr-set-utils.js', 'list-export-ui.js', "searchParams.has('standalone-source')", "searchParams.delete('standalone-source')", "cache:'no-store'", 'standaloneSourceNetworkFirst']);
 assert(sw.indexOf("searchParams.has('standalone-source')") < sw.indexOf('caches.match(e.request)'), 'standalone-source branch must run before cache-first runtime fallback');
 assert(sw.indexOf("searchParams.delete('standalone-source')") < sw.indexOf('cache.match(canonicalUrl.href)'), 'standalone-source must be removed before canonical fallback lookup');
 assert(!/c\.put\(e\.request[\s\S]{0,120}standalone-source/.test(sw), 'standalone-source query requests must not be cached');
@@ -116,3 +118,6 @@ hasAll(builderJs, ["const BUILD_REVISION = 'standalone-builder-v3'", "fetch(fres
 hasNone(builderJs, ['ignoreSearch: true', 'force-cache']);
 
 console.log(`Full ${Core.formatBytes(Core.bytes(full))}; Lite ${Core.formatBytes(Core.bytes(lite))}`);
+
+hasAll(sources['index.html'], ['cidr-set-utils.js', 'list-export-ui.js']);
+hasAll(Core.SOURCE_FILES, ['cidr-set-utils.js', 'list-export-ui.js']);
