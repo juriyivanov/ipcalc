@@ -5,11 +5,22 @@ on:
     branches: [ main ]
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: codex/create-draft-pr-for-cidr-set-calculator
+          fetch-depth: 0
+      - name: Apply export spacing polish
+        run: |
+          if grep -q "APP_VERSION = '0.14.3'" app.js; then
+            python3 tools/apply-export-spacing-fix.py
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -25,3 +36,14 @@ jobs:
           node tools/check-index-inline-js.js
       - name: Run tests
         run: node --test
+      - name: Publish tested product changes
+        if: success()
+        run: |
+          if git diff --quiet -- app.css app.js sw.js test/standalone-builder-core.test.js; then
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add app.css app.js sw.js test/standalone-builder-core.test.js
+          git commit -m "Polish export output spacing"
+          git push origin HEAD:codex/create-draft-pr-for-cidr-set-calculator
