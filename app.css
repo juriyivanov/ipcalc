@@ -98,7 +98,7 @@ summary { cursor: pointer; font-weight: bold; }
 .export-panel { margin-top: 14px; padding: 12px; border: 1px solid var(--panel-border); border-radius: 8px; background: color-mix(in srgb, var(--panel-bg) 70%, var(--result-bg)); }
 .export-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: end; }
 .export-actions { display: flex; gap: 8px; margin-top: 10px; }
-.export-output { width: 100%; min-height: 2.5rem; height: auto; max-height: none; overflow: hidden; resize: none; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.export-output { width: 100%; min-height: 4.75rem; height: auto; max-height: none; overflow: hidden; resize: none; field-sizing: content; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .cidr-input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .cidr-input-grid textarea { min-height: 120px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .status-summary, .cidr-status { margin: 12px 0; padding: 10px; border: 1px solid var(--panel-border); border-radius: 8px; background: var(--result-row-bg); }
@@ -110,17 +110,20 @@ summary { cursor: pointer; font-weight: bold; }
 .matched-prefix-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
 .formats-table-card { padding: 8px; }
 .formats-table { width: 100%; table-layout: fixed; }
+.formats-table th,
+.formats-table td { padding-top: 6px; padding-bottom: 6px; }
 .formats-table th:first-child,
 .formats-table td:first-child { width: 170px; white-space: nowrap; }
 .formats-table th:last-child,
-.formats-table td:last-child { width: 72px; text-align: right; }
-.formats-table .format-copy-cell { width: 72px; text-align: right; }
+.formats-table td:last-child { width: 58px; text-align: right; }
+.formats-table .format-copy-cell { width: 58px; text-align: right; }
+.formats-table .copy-button { width: auto; padding: 5px 7px; font-size: 0.86rem; line-height: 1.2; }
 @media (max-width: 640px) {
   .formats-table thead,
   .formats-table th:first-child,
   .formats-table td:first-child { display: none; }
   .formats-table { width: 100%; table-layout: auto; }
   .formats-table td:nth-child(2) { width: auto; white-space: nowrap; overflow-x: auto; }
-  .formats-table td:last-child { width: 72px; text-align: right; }
-  .formats-table .copy-button { width: 64px; }
+  .formats-table td:last-child { width: 58px; text-align: right; }
+  .formats-table .copy-button { width: 52px; }
 }
