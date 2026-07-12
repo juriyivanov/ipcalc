@@ -31,7 +31,7 @@ function buildAndValidate(src = sources) {
 
 const { full, lite } = buildAndValidate();
 
-hasAll(full, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'MAC Vendor / Formats', 'Copy formats', 'embedded-oui-db', 'Vendor', 'Matched prefix', 'Assignment type', 'Random vendor MAC', 'function lookupVendor']);
+hasAll(full, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'MAC Vendor / Formats', 'Copy formats', 'embedded-oui-db', 'Vendor', 'Matched prefix', 'Assignment type', 'Random vendor MAC', 'function lookupVendor']);
 noExternal(full);
 assert.strictEqual(count(full, 'id="embedded-oui-db"'), 1, 'Full must contain exactly one embedded OUI database');
 const embeddedIndex = full.indexOf('id="embedded-oui-db"');
@@ -43,7 +43,7 @@ assert(appScriptIndex >= 0, 'application script marker must exist');
 assert(embeddedIndex < initialLookupIndex, 'embedded OUI database must appear before the initial lookup');
 assert(embeddedIndex < appScriptIndex, 'embedded OUI database must be parsed before application JavaScript');
 
-hasAll(lite, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'MAC Formats', 'Colon uppercase', 'Colon lowercase', 'Hyphen uppercase', 'Hyphen lowercase', 'Cisco dotted lowercase', 'Cisco dotted uppercase', 'Plain uppercase', 'Plain lowercase', 'Space separated', '0x-prefixed', 'Random MAC', 'Unicast', 'Multicast / group address', 'Broadcast', 'Globally administered', 'Locally administered / randomized possible', 'function runFormatterOnly']);
+hasAll(lite, ['<!DOCTYPE html>', '<html lang="en" data-standalone="true">', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'MAC Formats', 'Colon uppercase', 'Colon lowercase', 'Hyphen uppercase', 'Hyphen lowercase', 'Cisco dotted lowercase', 'Cisco dotted uppercase', 'Plain uppercase', 'Plain lowercase', 'Space separated', '0x-prefixed', 'Random MAC', 'Unicast', 'Multicast / group address', 'Broadcast', 'Globally administered', 'Locally administered / randomized possible', 'function runFormatterOnly']);
 hasNone(lite, ['Vendor', 'Matched prefix', 'Assignment type', 'Random vendor MAC', 'oui-db.json', 'embedded-oui-db', 'lookupVendor', 'loadOuiDb', 'Vendor not found', 'OUI database', 'bundled vendor database']);
 noExternal(lite);
 assert(!/const\s+response\s*=\s*await\s*(?:[;\n\r]|$)/.test(lite), 'Lite must not contain dangling await');

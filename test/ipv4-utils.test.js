@@ -133,3 +133,60 @@ test('index and service worker include shared IPv4 utilities', () => {
   assert.match(indexHtml, /<script src="\.\/ipv4-utils\.js"><\/script>/);
   assert.match(serviceWorker, /ipv4-utils\.js/);
 });
+
+test('classifies IPv4 special-purpose blocks with longest-prefix match', () => {
+  const cases = [
+    ['10.1.2.3', 'Private use', '10.0.0.0/8', 'Private-Use'],
+    ['100.64.1.1', 'Shared Address Space / CGNAT', '100.64.0.0/10', 'Shared Address Space'],
+    ['127.0.0.1', 'Loopback', '127.0.0.0/8', 'Loopback'],
+    ['169.254.10.20', 'Link-local', '169.254.0.0/16', 'Link Local'],
+    ['192.0.0.9', 'IETF protocol assignment', '192.0.0.9/32', 'Port Control Protocol Anycast'],
+    ['192.0.0.170', 'IETF protocol assignment', '192.0.0.170/32', 'NAT64/DNS64 Discovery'],
+    ['192.0.2.1', 'Documentation', '192.0.2.0/24', 'Documentation (TEST-NET-1)'],
+    ['198.18.1.1', 'Benchmarking', '198.18.0.0/15', 'Benchmarking'],
+    ['198.51.100.1', 'Documentation', '198.51.100.0/24', 'Documentation (TEST-NET-2)'],
+    ['203.0.113.1', 'Documentation', '203.0.113.0/24', 'Documentation (TEST-NET-3)'],
+    ['224.0.0.1', 'Multicast', '224.0.0.0/4', 'Multicast'],
+    ['240.0.0.1', 'Reserved', '240.0.0.0/4', 'Reserved'],
+    ['255.255.255.255', 'Limited broadcast', '255.255.255.255/32', 'Limited Broadcast'],
+    ['8.8.8.8', 'Ordinary unicast', 'Not in special-purpose registry', 'Not in IANA special-purpose registry']
+  ];
+  for (const [address, category, block, name] of cases) {
+    const result = ip.classifyIPv4(address);
+    assert.equal(result.category, category, address);
+    assert.equal(result.block, block, address);
+    assert.equal(result.name, name, address);
+  }
+  assert.equal(ip.classifyIPv4('192.0.0.9').prefix, 32);
+  assert.equal(ip.classifyIPv4('192.0.0.1').block, '192.0.0.0/29');
+});
+
+test('generates PTR names and reverse DNS information', () => {
+  assert.equal(ip.ipv4ToPtrName('192.168.10.25'), '25.10.168.192.in-addr.arpa.');
+  assert.equal(ip.ipv4ToPtrName('0.0.0.0'), '0.0.0.0.in-addr.arpa.');
+  assert.equal(ip.ipv4ToPtrName('255.255.255.255'), '255.255.255.255.in-addr.arpa.');
+  assert.equal(ip.reverseZoneForPrefix('10.20.30.40', 8).reverseZone, '10.in-addr.arpa.');
+  assert.equal(ip.reverseZoneForPrefix('10.20.30.40', 16).reverseZone, '20.10.in-addr.arpa.');
+  assert.equal(ip.reverseZoneForPrefix('10.20.30.40', 24).reverseZone, '30.20.10.in-addr.arpa.');
+  assert.equal(ip.reverseZoneForPrefix('0.0.0.0', 0).reverseZone, 'in-addr.arpa.');
+  assert.equal(ip.reverseZoneForPrefix('8.8.8.8', 32).ptrName, '8.8.8.8.in-addr.arpa.');
+
+  const rfc2317 = ip.reverseZoneForPrefix('192.0.2.128', 26);
+  assert.equal(rfc2317.parentZone, '2.0.192.in-addr.arpa.');
+  assert.equal(rfc2317.addressRange, '192.0.2.128 – 192.0.2.191');
+  assert.equal(rfc2317.suggestedChildZone, '128-191.2.0.192.in-addr.arpa.');
+
+  const multiple9 = ip.reverseZoneForPrefix('10.0.0.0', 9);
+  assert.equal(multiple9.kind, 'multiple');
+  assert.equal(multiple9.delegationBoundary, '/16');
+
+  const multiple23 = ip.reverseZoneForPrefix('192.168.0.0', 23);
+  assert.equal(multiple23.kind, 'multiple');
+  assert.equal(multiple23.delegationBoundary, '/24');
+
+  const multiple = ip.reverseZoneForPrefix('172.16.16.1', 20);
+  assert.equal(multiple.kind, 'multiple');
+  assert.equal(multiple.message, 'Multiple octet-boundary zones required');
+  assert.equal(multiple.delegationBoundary, '/24');
+  assert.equal(multiple.reverseZone, undefined);
+});

@@ -4,12 +4,14 @@
 
 ## Возможности
 
-- **IPv4 Address Analyzer** — строгий разбор IPv4/CIDR или dotted mask, network/broadcast/host range, wildcard, Previous/Next и кнопки изменения префикса.
+- **IPv4 Address Analyzer** — строгий разбор IPv4/CIDR или dotted mask, network/broadcast/host range, wildcard, Previous/Next, кнопки изменения префикса, IPv4 special-purpose address classification, Reverse DNS / in-addr.arpa generation и RFC 2317 classless reverse delegation hints.
 - **IPv4 Range to Prefix Converter** — преобразование IPv4-диапазона в минимальный набор CIDR-блоков с ограничением объёма вывода.
 - **IPv4 Subnet Calculator** — разбиение сети на подсети, вывод масок, Previous/Next и prefix controls.
 - **MAC Vendor / Formats** — нормализация MAC, copy-friendly форматы, MAC flags, Random MAC, Random vendor MAC и lookup по локальной offline OUI-базе `oui-db.json`.
 - **PWA / GitHub Pages** — manifest, installable mode, offline cache и stale-while-revalidate для `oui-db.json`.
 - **Темная тема** — приложение по умолчанию открывается в темном режиме, тему можно переключить кнопкой `Toggle Mode`.
+
+IPv4 classification uses a static in-app copy of the IANA IPv4 Special-Purpose Address Registry. Ordinary unicast means the address is not in that special-purpose table; it does not guarantee allocation or current global Internet reachability. Classless reverse DNS hints follow RFC 2317 conventions and require CNAME records or equivalent configuration in the parent reverse zone.
 
 ## Быстрый старт
 
