@@ -121,7 +121,7 @@ test('subnet calculation preparation rejects invalid integrated inputs', () => {
   for (const value of ['/abc', '/24abc', '/33', '/-1', '/', '', '255.0.255.0']) {
     const result = ip.prepareSubnetCalculation('192.168.0.0', '/24', value);
     assert.equal(result.error, 'invalid-new-cidr', value);
-    assert.equal(result.message, 'Invalid new CIDR');
+    assert.equal(result.message, 'Enter a valid new prefix.');
   }
   assert.equal(ip.prepareSubnetCalculation('192.168.0.0', '/0', '/abc').error, 'invalid-new-cidr');
   assert.equal(ip.prepareSubnetCalculation('192.168.0.0', '/24', '/16').error, 'new-cidr-too-small');
@@ -196,4 +196,18 @@ test('generates PTR names and reverse DNS information', () => {
   assert.equal(multiple.message, 'Multiple octet-boundary zones required');
   assert.equal(multiple.delegationBoundary, '/24');
   assert.equal(multiple.reverseZone, undefined);
+});
+
+test('parses IPv4 address with optional embedded mask', () => {
+  const base = ip.parseIPv4('192.168.1.10');
+  assert.deepEqual(ip.parseIPv4AddressAndMask('192.168.1.10'), { ip: base, ipText: '192.168.1.10', mask: null, maskText: null, prefix: null, hasEmbeddedMask: false });
+  assert.deepEqual(ip.parseIPv4AddressAndMask('192.168.1.10/24'), { ip: base, ipText: '192.168.1.10', mask: ip.cidrToMask(24), maskText: '/24', prefix: 24, hasEmbeddedMask: true });
+  assert.deepEqual(ip.parseIPv4AddressAndMask('192.168.1.10 255.255.255.0'), { ip: base, ipText: '192.168.1.10', mask: ip.cidrToMask(24), maskText: '255.255.255.0', prefix: 24, hasEmbeddedMask: true });
+  assert.deepEqual(ip.parseIPv4AddressAndMask('192.168.1.10/255.255.255.0'), { ip: base, ipText: '192.168.1.10', mask: ip.cidrToMask(24), maskText: '255.255.255.0', prefix: 24, hasEmbeddedMask: true });
+  assert.equal(ip.parseIPv4AddressAndMask(' 192.168.1.10/24 ').prefix, 24);
+  assert.equal(ip.parseIPv4AddressAndMask('0.0.0.0/0').prefix, 0);
+  assert.equal(ip.parseIPv4AddressAndMask('255.255.255.255/32').prefix, 32);
+  for (const value of ['192.168.1.10/33', '192.168.1.10/24garbage', '192.168.1.10 255.0.255.0', '999.168.1.10/24', '192.168.1.10 extra text', '']) {
+    assert.equal(ip.parseIPv4AddressAndMask(value), null, value);
+  }
 });

@@ -132,6 +132,31 @@
     return mask === null ? null : maskToCIDR(mask);
   }
 
+  function parseIPv4AddressAndMask(input) {
+    const value = String(input).trim();
+    if (!value) return null;
+    const match = value.match(/^([^\s/]+)(?:(?:\s+|\/)([^\s/]+))?$/);
+    if (!match) return null;
+    const ipText = match[1];
+    const maskText = match[2] || null;
+    const ip = parseIPv4(ipText);
+    if (ip === null) return null;
+    if (maskText === null) {
+      return { ip, ipText, mask: null, maskText: null, prefix: null, hasEmbeddedMask: false };
+    }
+    let prefix = parseCIDR(maskText);
+    let mask = null;
+    if (prefix !== null) {
+      mask = cidrToMask(prefix);
+    } else {
+      mask = parseSubnet(maskText);
+      if (mask === null) return null;
+      prefix = maskToCIDR(mask);
+      if (prefix === null) return null;
+    }
+    const normalizedMaskText = maskText.includes('.') ? intToIPv4(mask) : `/${prefix}`;
+    return { ip, ipText, mask, maskText: normalizedMaskText, prefix, hasEmbeddedMask: true };
+  }
 
 
   const SPECIAL_IPV4_BLOCKS = [
@@ -225,16 +250,16 @@
 
   function prepareSubnetCalculation(baseNetworkInput, baseSubnetInput, newSubnetInput) {
     const baseIp = parseIPv4(baseNetworkInput);
-    if (baseIp === null) return calculationError('invalid-base-ip', 'Invalid base network');
+    if (baseIp === null) return calculationError('invalid-base-ip', 'Enter a valid base network.');
 
     const baseCidr = parseSubnetPrefix(baseSubnetInput);
-    if (baseCidr === null) return calculationError('invalid-base-cidr', 'Invalid original CIDR');
+    if (baseCidr === null) return calculationError('invalid-base-cidr', 'Enter a valid original CIDR or subnet mask.');
 
     const newCidr = parseSubnetPrefix(newSubnetInput);
-    if (newCidr === null) return calculationError('invalid-new-cidr', 'Invalid new CIDR');
+    if (newCidr === null) return calculationError('invalid-new-cidr', 'Enter a valid new prefix.');
 
     if (newCidr < baseCidr) {
-      return calculationError('new-cidr-too-small', 'New CIDR must be greater than or equal to base CIDR');
+      return calculationError('new-cidr-too-small', 'The new prefix must be greater than or equal to the original prefix.');
     }
 
     const baseMask = cidrToMask(baseCidr);
@@ -245,5 +270,5 @@
     return { ok: true, network, baseCidr, newCidr, totalSubnets, visibleSubnets };
   }
 
-  return { IPV4_MAX, IPV4_SIZE, SUBNET_RENDER_LIMIT, SPECIAL_IPV4_BLOCKS, classifyIPv4, ipv4ToPtrName, reverseZoneForPrefix, parseIPv4, ipv4ToInt, intToIPv4, parseCIDR, cidrToMask, maskToCIDR, parseMask, parseSubnet, parseIPv4WithPrefix, subnetSize, safeSubnetStep, rangeToSubnets, subnetCount, prepareSubnetCalculation };
+  return { IPV4_MAX, IPV4_SIZE, SUBNET_RENDER_LIMIT, SPECIAL_IPV4_BLOCKS, classifyIPv4, ipv4ToPtrName, reverseZoneForPrefix, parseIPv4, ipv4ToInt, intToIPv4, parseCIDR, cidrToMask, maskToCIDR, parseMask, parseSubnet, parseIPv4WithPrefix, parseIPv4AddressAndMask, subnetSize, safeSubnetStep, rangeToSubnets, subnetCount, prepareSubnetCalculation };
 });

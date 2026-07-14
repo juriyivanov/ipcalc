@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const APP_VERSION = '0.14.3';
+  const APP_VERSION = '3.15.2';
 
   function renderAppVersion() {
     const element = document.getElementById('appVersion');
@@ -28,6 +28,38 @@
     }
   }
 
+  function initClearableField(input, button) {
+    function updateButtonVisibility() { button.hidden = input.value.length === 0; }
+    button.addEventListener('click', () => {
+      input.value = '';
+      input.focus();
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    input.addEventListener('input', updateButtonVisibility);
+    updateButtonVisibility();
+  }
+
+  function initClearableFields(root = document) {
+    root.querySelectorAll('.clearable-field').forEach((field) => {
+      const input = field.querySelector('input:not([readonly]), textarea:not([readonly])');
+      const button = field.querySelector('.field-clear-button');
+      if (!input || !button || field.dataset.clearableReady === 'true') return;
+      field.dataset.clearableReady = 'true';
+      initClearableField(input, button);
+    });
+  }
+
+  function ensureStepInputValue(input) {
+    if (input.value.trim()) return true;
+    const value = (input.defaultValue || '').trim();
+    if (!value) return false;
+    input.value = value;
+    dispatchInput(input);
+    return true;
+  }
+
+  function dispatchInput(input) { input.dispatchEvent(new Event('input', { bubbles: true })); }
+
   function createExportPanel({ container, getItems, defaultName, getDisabledMessage }) {
     const FORMATS = [
       ['plain', 'Plain CIDR'], ['cisco-prefix-list', 'Cisco prefix-list'], ['mikrotik-address-list', 'MikroTik address-list'],
@@ -41,7 +73,7 @@
     const formatId = `${container.id || 'export'}Format`, nameId = `${container.id || 'export'}Name`, actionId = `${container.id || 'export'}Action`;
     const formatWrap = create('div', {}), formatLabel = create('label', { for: formatId }, 'Export format'), format = create('select', { id: formatId });
     FORMATS.forEach(([value, text]) => format.append(create('option', { value }, text))); formatWrap.append(formatLabel, format);
-    const nameWrap = create('div', {}), nameLabel = create('label', { for: nameId }, 'List name'), name = create('input', { id: nameId, type: 'text', value: defaultName || 'NETWORKS' }); nameWrap.append(nameLabel, name);
+    const nameWrap = create('div', {}), nameLabel = create('label', { for: nameId }, 'List name'), nameField = create('div', { className: 'clearable-field' }), name = create('input', { id: nameId, type: 'text', value: defaultName || 'NETWORKS' }), nameClear = create('button', { className: 'field-clear-button', type: 'button', 'aria-label': 'Clear List name', title: 'Clear' }, '×'); nameField.append(name, nameClear); nameWrap.append(nameLabel, nameField); initClearableField(name, nameClear);
     const actionWrap = create('div', {}), actionLabel = create('label', { for: actionId }, 'Action'), action = create('select', { id: actionId }); action.append(create('option', { value: 'permit' }, 'permit'), create('option', { value: 'deny' }, 'deny')); actionWrap.append(actionLabel, action);
     const copy = create('button', { type: 'button', disabled: 'disabled' }, 'Copy output'), download = create('button', { type: 'button', disabled: 'disabled' }, 'Download');
     const status = create('div', { className: 'error', role: 'alert' }), output = create('textarea', { className: 'export-output', readonly: 'readonly', 'aria-label': 'Export output' });
@@ -70,7 +102,7 @@
   function initApp() {
       const CONFIG_EXPORT_LIMIT = 16384;
       const CIDR_VISIBLE_ROWS = 4096;
-      const { IPV4_MAX, SUBNET_RENDER_LIMIT, parseIPv4, intToIPv4, parseCIDR, cidrToMask, maskToCIDR, parseSubnet, parseIPv4WithPrefix, safeSubnetStep, rangeToSubnets, prepareSubnetCalculation, classifyIPv4, ipv4ToPtrName, reverseZoneForPrefix } = window.IPv4Utils;
+      const { IPV4_MAX, SUBNET_RENDER_LIMIT, parseIPv4, intToIPv4, parseCIDR, cidrToMask, maskToCIDR, parseSubnet, parseIPv4WithPrefix, parseIPv4AddressAndMask, safeSubnetStep, rangeToSubnets, prepareSubnetCalculation, classifyIPv4, ipv4ToPtrName, reverseZoneForPrefix } = window.IPv4Utils;
       const ipToInt = parseIPv4;
       const intToIp = intToIPv4;
       const CidrSetUtils = window.CidrSetUtils;
@@ -113,13 +145,24 @@
         ipError.textContent = '';
         subnetError.textContent = '';
 
-        const ipInt = ipToInt(ipInput.value.trim());
-        if (ipInt === null) {
+        const parsedAddress = parseIPv4AddressAndMask(ipInput.value);
+        if (!ipInput.value.trim()) {
+          ipError.textContent = 'Enter an IPv4 address.';
+          analyzerResults.style.display = 'none';
+          return;
+        }
+        if (!parsedAddress) {
           ipError.textContent = 'Invalid IP address.';
           analyzerResults.style.display = 'none';
           return;
         }
-        const mask = parseSubnet(subnetInput.value);
+        const ipInt = parsedAddress.ip;
+        if (!parsedAddress.hasEmbeddedMask && !subnetInput.value.trim()) {
+          subnetError.textContent = 'Enter a subnet mask.';
+          analyzerResults.style.display = 'none';
+          return;
+        }
+        const mask = parsedAddress.hasEmbeddedMask ? parsedAddress.mask : parseSubnet(subnetInput.value);
         if (mask === null) {
           subnetError.textContent = 'Invalid subnet mask.';
           analyzerResults.style.display = 'none';
@@ -184,6 +227,8 @@
       }
 
       function jumpToNextSubnet() {
+        if (!ensureStepInputValue(ipInput)) return;
+        ensureStepInputValue(subnetInput);
         const ipInt = ipToInt(ipInput.value.trim());
         const mask = parseSubnet(subnetInput.value);
         if (ipInt === null || mask === null) return;
@@ -191,10 +236,12 @@
         const newIp = safeSubnetStep(ipInt, cidr, 1, cidr >= 31 ? 0 : 1);
         if (newIp === null) return;
         ipInput.value = intToIp(newIp);
-        calculateAnalyzer();
+        dispatchInput(ipInput);
       }
 
       function jumpToPrevSubnet() {
+        if (!ensureStepInputValue(ipInput)) return;
+        ensureStepInputValue(subnetInput);
         const ipInt = ipToInt(ipInput.value.trim());
         const mask = parseSubnet(subnetInput.value);
         if (ipInt === null || mask === null) return;
@@ -202,10 +249,11 @@
         const newIp = safeSubnetStep(ipInt, cidr, -1, cidr >= 31 ? 0 : 1);
         if (newIp === null) return;
         ipInput.value = intToIp(newIp);
-        calculateAnalyzer();
+        dispatchInput(ipInput);
       }
 
       function updateMask(increment) {
+        if (!ensureStepInputValue(subnetInput)) return;
         let input = subnetInput.value.trim();
         let cidr;
         if (input.startsWith('/')) {
@@ -218,14 +266,26 @@
         if (cidr < 0) cidr = 0;
         if (cidr > 32) cidr = 32;
         subnetInput.value = "/" + cidr;
-        calculateAnalyzer();
+        dispatchInput(subnetInput);
+      }
+
+      function normalizeAnalyzerAddressInput() {
+        const parsed = parseIPv4AddressAndMask(ipInput.value);
+        if (!parsed || !parsed.hasEmbeddedMask) return;
+        ipInput.value = parsed.ipText;
+        subnetInput.value = parsed.maskText;
+        dispatchInput(ipInput);
+        dispatchInput(subnetInput);
       }
 
       document.getElementById('copyPtrNameBtn').addEventListener('click', (event) => copyText(ptrLookupName.textContent, event.currentTarget));
       document.getElementById('copyReverseZoneBtn').addEventListener('click', (event) => copyText(reverseZone.textContent, event.currentTarget));
       document.getElementById('copyRfc2317ChildBtn').addEventListener('click', (event) => copyText(rfc2317ChildZone.textContent, event.currentTarget));
 
-      ipInput.addEventListener('input', calculateAnalyzer);
+      ipInput.addEventListener('input', () => calculateAnalyzer());
+      ipInput.addEventListener('paste', () => { setTimeout(normalizeAnalyzerAddressInput, 0); });
+      ipInput.addEventListener('blur', normalizeAnalyzerAddressInput);
+      ipInput.addEventListener('change', normalizeAnalyzerAddressInput);
       subnetInput.addEventListener('input', calculateAnalyzer);
       document.getElementById('nextSubnetBtn').addEventListener('click', jumpToNextSubnet);
       document.getElementById('prevSubnetBtn').addEventListener('click', jumpToPrevSubnet);
@@ -302,7 +362,10 @@
       }
 
       function parseRangeValue(input) {
-        return parseIPv4WithPrefix(input.value.trim(), Number(input.dataset.prefix || 24));
+        if (!ensureStepInputValue(input)) return null;
+        const parsed = parseIPv4WithPrefix(input.value.trim(), Number(input.dataset.prefix || 24));
+        if (parsed) input.dataset.prefix = String(parsed.prefix);
+        return parsed;
       }
       function formatRangeValue(ip, prefix) {
         return `${intToIp(ip)}/${prefix}`;
@@ -338,7 +401,7 @@
       const baseNetworkInput = document.getElementById('baseNetwork');
       const baseCIDRInput    = document.getElementById('baseCIDR');
       const newCIDRInput     = document.getElementById('newCIDR');
-      const subnetCalcBtn    = document.getElementById('subnetCalcBtn');
+      const subnetStatus    = document.getElementById('subnetStatus');
       const subnetResults    = document.getElementById('subnetResults');
       const subnetTableBody  = document.querySelector('#subnetTable tbody');
       const subnetLimitWarning = document.getElementById('subnetLimitWarning');
@@ -349,6 +412,8 @@
 
       // New functions for Subnet Calculator inline controls:
       function jumpToNextBaseNetwork() {
+        if (!ensureStepInputValue(baseNetworkInput)) return;
+        ensureStepInputValue(baseCIDRInput);
         const netInt = ipToInt(baseNetworkInput.value.trim());
         const mask = parseSubnet(baseCIDRInput.value.trim());
         if(netInt === null || mask === null) return;
@@ -356,8 +421,11 @@
         const nextNetwork = safeSubnetStep(netInt, cidr, 1, 0);
         if (nextNetwork === null) return;
         baseNetworkInput.value = intToIp(nextNetwork);
+        dispatchInput(baseNetworkInput);
       }
       function jumpToPrevBaseNetwork() {
+        if (!ensureStepInputValue(baseNetworkInput)) return;
+        ensureStepInputValue(baseCIDRInput);
         const netInt = ipToInt(baseNetworkInput.value.trim());
         const mask = parseSubnet(baseCIDRInput.value.trim());
         if(netInt === null || mask === null) return;
@@ -365,8 +433,10 @@
         const prevNetwork = safeSubnetStep(netInt, cidr, -1, 0);
         if (prevNetwork === null) return;
         baseNetworkInput.value = intToIp(prevNetwork);
+        dispatchInput(baseNetworkInput);
       }
       function updateBaseCIDR(increment) {
+        if (!ensureStepInputValue(baseCIDRInput)) return;
         let input = baseCIDRInput.value.trim();
         let cidr;
         if(input.startsWith('/')) {
@@ -379,8 +449,10 @@
         if(cidr < 0) cidr = 0;
         if(cidr > 32) cidr = 32;
         baseCIDRInput.value = "/" + cidr;
+        dispatchInput(baseCIDRInput);
       }
       function updateNewCIDR(increment) {
+        if (!ensureStepInputValue(newCIDRInput)) return;
         let input = newCIDRInput.value.trim();
         let cidr;
         if(input.startsWith('/')) {
@@ -393,15 +465,17 @@
         if(cidr < 0) cidr = 0;
         if(cidr > 32) cidr = 32;
         newCIDRInput.value = "/" + cidr;
+        dispatchInput(newCIDRInput);
       }
 
-      // Subnet Calculator: Calculate subnets
-      function calcSubnets() {
+      function updateSubnetOutput() {
         subnetTableBody.innerHTML = '';
-        subnetResults.style.display = 'none';
+        subnetResults.style.display = 'block';
         subnetLimitWarning.style.display = 'none';
         subnetLimitWarning.textContent = '';
         subnetExportNotice.textContent = '';
+        subnetStatus.textContent = '';
+        subnetStatus.className = 'range-status';
         subnetExportBlocked = '';
         subnetResultItems = [];
         subnetExport.clear();
@@ -412,7 +486,8 @@
           newCIDRInput.value
         );
         if (!calculation.ok) {
-          alert(calculation.message);
+          subnetStatus.textContent = calculation.message;
+          subnetStatus.className = 'range-status is-error';
           return;
         }
 
@@ -447,7 +522,15 @@
         subnetExport.refresh();
       }
 
-      subnetCalcBtn.addEventListener('click', calcSubnets);
+      let subnetUpdateTimer;
+      function scheduleSubnetUpdate() {
+        clearTimeout(subnetUpdateTimer);
+        subnetUpdateTimer = setTimeout(updateSubnetOutput, 150);
+      }
+      baseNetworkInput.addEventListener('input', scheduleSubnetUpdate);
+      baseCIDRInput.addEventListener('input', scheduleSubnetUpdate);
+      newCIDRInput.addEventListener('input', scheduleSubnetUpdate);
+      updateSubnetOutput();
 
       // Event listeners for Subnet Calculator inline controls
       document.getElementById('prevBaseNetworkBtn').addEventListener('click', jumpToPrevBaseNetwork);
@@ -586,7 +669,6 @@
       /* MAC_VENDOR_JS_START */
       const randomVendorMacBtn = document.getElementById('randomVendorMacBtn');
       /* MAC_VENDOR_JS_END */
-      const clearBtn = document.getElementById('clearBtn');
       const macError = document.getElementById('macError');
       const resultCard = document.getElementById('resultCard');
       const formatsCard = document.getElementById('formatsCard');
@@ -817,6 +899,7 @@
       async function runLookup() {
         const sequence = ++macLookupSequence;
         macError.textContent = '';
+        if (!macInput.value.trim()) { resultCard.style.display = 'none'; formatsCard.style.display = 'none'; return; }
         const normalized = normalizeMac(macInput.value);
         if (normalized.error) {
           resultCard.style.display = 'none';
@@ -836,6 +919,7 @@
 
       function runFormatterOnly() {
         macError.textContent = '';
+        if (!macInput.value.trim()) { resultCard.style.display = 'none'; formatsCard.style.display = 'none'; return; }
         const normalized = normalizeMac(macInput.value);
         if (normalized.error) {
           resultCard.style.display = 'none';
@@ -873,7 +957,7 @@
 
       randomMacBtn.addEventListener('click', () => {
         macInput.value = generateRandomMac();
-        runLookup();
+        dispatchInput(macInput);
       });
       /* MAC_VENDOR_JS_START */
       randomVendorMacBtn.addEventListener('click', async () => {
@@ -885,27 +969,21 @@
           return;
         }
         macInput.value = mac;
-        runLookup();
+        dispatchInput(macInput);
       });
       /* MAC_VENDOR_JS_END */
       macInput.addEventListener('input', runLookup);
       macInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') runLookup();
       });
-      clearBtn.addEventListener('click', () => {
-        macInput.value = '';
-        macInput.focus();
-        resultCard.style.display = 'none';
-        formatsCard.style.display = 'none';
-        macError.textContent = '';
-      });
       document.querySelectorAll('.example').forEach((button) => {
         button.addEventListener('click', () => {
           macInput.value = button.dataset.mac;
-          runLookup();
+          dispatchInput(macInput);
         });
       });
 
+      initClearableFields();
       runLookup();
       const tabButtons = document.querySelectorAll('.tab-button');
       const tabContents  = document.querySelectorAll('.tab-content');

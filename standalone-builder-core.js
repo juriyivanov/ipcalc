@@ -156,7 +156,7 @@
     let html = assertSource(sources, 'index.html');
     validateIndexSource(html);
     html = inlineAssets(html, sources);
-    html = html.replace(/function initServiceWorker\(\) \{[\s\S]*?\n  \}\n\n  function createExportPanel/, "function initServiceWorker() { console.log('Standalone HTML: service worker disabled.'); }\n\n  function createExportPanel");
+    html = html.replace(/function initServiceWorker\(\) \{[\s\S]*?\n  \}\n\n  function initClearableField/, "function initServiceWorker() { console.log('Standalone HTML: service worker disabled.'); }\n\n  function initClearableField");
     html = removeExternalReferences(html);
     html = html.replace(/<html lang="en">/, '<html lang="en" data-standalone="true">');
     html = html.replace(/<title>.*?<\/title>/, `<title>IP Calculator Standalone ${variant === 'full' ? 'Full' : 'Lite'}</title>`);

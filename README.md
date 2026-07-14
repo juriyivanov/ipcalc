@@ -1,13 +1,14 @@
 # Extended IP Calculator
 
-**Extended IP Calculator** — это статическое браузерное приложение для базовых операций с IPv4-сетями и MAC-адресами. Оно не требует backend, npm-сборки или внешних runtime-зависимостей.
+**Extended IP Calculator v3.15.2** — это статическое браузерное приложение для базовых операций с IPv4-сетями и MAC-адресами. Оно не требует backend, npm-сборки или внешних runtime-зависимостей.
 
 ## Возможности
 
-- **IPv4 Address Analyzer** — строгий разбор IPv4/CIDR или dotted mask, network/broadcast/host range, wildcard, Previous/Next, кнопки изменения префикса, IPv4 special-purpose address classification, PTR lookup name generation, octet-aligned reverse zones и RFC 2317 classless reverse delegation hints.
+- **IPv4 Address Analyzer** — строгий разбор IPv4, IP/CIDR, IP + dotted mask или IP/dotted-mask, network/broadcast/host range, wildcard, Previous/Next, кнопки изменения префикса, IPv4 special-purpose address classification, PTR lookup name generation, octet-aligned reverse zones и RFC 2317 classless reverse delegation hints.
 - **IPv4 Range to Prefix Converter** — преобразование IPv4-диапазона в минимальный набор CIDR-блоков с ограничением объёма вывода.
-- **IPv4 Subnet Calculator** — разбиение сети на подсети, вывод масок, Previous/Next и prefix controls.
+- **IPv4 Subnet Calculator** — автоматическое реактивное разбиение сети на подсети, вывод масок, Previous/Next и prefix controls.
 - **CIDR Set Calculator** — CIDR set normalization and aggregation, CIDR containment analysis, CIDR include/exclude subtraction и подсчет покрытых IPv4-адресов.
+- **Reusable Clear controls** — компактная кнопка очистки для редактируемых текстовых полей без очистки readonly export output.
 - **Shared network configuration exports** — общий экспорт списков сетей из Range, Subnet и CIDR Set в Plain CIDR, Cisco prefix-list, MikroTik address-list, VyOS prefix-list, nftables, JSON и CSV.
 - **MAC Vendor / Formats** — нормализация MAC, copy-friendly форматы, MAC flags, Random MAC, Random vendor MAC и lookup по локальной offline OUI-базе `oui-db.json`.
 - **PWA / GitHub Pages** — manifest, installable mode, offline cache и stale-while-revalidate для `oui-db.json`.
@@ -62,8 +63,8 @@ Builder загружает текущие исходники с того же or
 ### Анализ IPv4-адреса
 
 1. Откройте вкладку **IPv4 Address Analyzer**.
-2. Введите IPv4-адрес, например `192.168.1.1`.
-3. Введите маску подсети в формате `/24` или `255.255.255.0`.
+2. Введите IPv4-адрес, например `192.168.1.1`, либо вставьте адрес вместе с маской: `192.168.1.10/24`, `192.168.1.10 255.255.255.0` или `192.168.1.10/255.255.255.0`.
+3. Если адрес введен без встроенной маски, введите маску подсети в формате `/24` или `255.255.255.0`.
 4. Результаты пересчитываются автоматически при изменении полей.
 
 ### Конвертация диапазона в CIDR
@@ -78,7 +79,7 @@ Builder загружает текущие исходники с того же or
 
 1. Откройте вкладку **IPv4 Subnet Calculator**.
 2. Укажите базовую сеть, исходный CIDR и новый префикс для разбиения.
-3. Нажмите **Calculate**.
+3. Результаты пересчитываются автоматически при изменении любого поля или inline-кнопок.
 4. Если результат не превышает 16,384 сетей, используйте панель **Export format** для экспорта полного безопасно вычисленного списка.
 
 ### CIDR Set Calculator
@@ -143,6 +144,8 @@ Builder загружает текущие исходники с того же or
 - Для locally administered/randomized MAC vendor может быть ненадежен или не определяться.
 
 ## Разработка
+
+Схема версии приложения: `3.<PR number>.<revision inside PR>`; для этого изменения используется `3.15.2`.
 
 Проект остаётся статическим HTML/CSS/JavaScript-приложением без npm-сборки и внешних runtime-зависимостей. Основной файл для разработки и локальной проверки — `index.html`; запускайте его через HTTP-сервер, например `python3 -m http.server 8000`.
 

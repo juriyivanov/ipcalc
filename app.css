@@ -103,7 +103,20 @@ summary { cursor: pointer; font-weight: bold; }
 .cidr-input-grid textarea { min-height: 120px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .status-summary, .cidr-status { margin: 12px 0; padding: 10px; border: 1px solid var(--panel-border); border-radius: 8px; background: var(--result-row-bg); }
 .app-version { position: fixed; right: 8px; bottom: 6px; z-index: 20; padding: 3px 7px; border: 1px solid var(--panel-border); border-radius: 5px; background: var(--panel-bg); color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; line-height: 1.2; opacity: 0.8; user-select: text; }
-@media (max-width: 640px) { body { margin: 10px; } .tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; overflow: visible; border-bottom: 0; } .tab-button { width: 100%; min-width: 0; white-space: normal; overflow-wrap: anywhere; border: 1px solid var(--panel-border); border-radius: 4px; text-align: center; padding: 8px 6px; font-size: 0.92rem; } .tab-button:last-child { grid-column: 1 / -1; } .input-group, .mac-input-row, .result-grid, .cidr-input-grid, .export-fields { grid-template-columns: 1fr; display: grid; } .step-buttons { grid-template-columns: repeat(4, minmax(0, 1fr)); } .copy-button, .step-button { width: 100%; } .examples-label, .examples .example { display: none; } .examples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; overflow: visible; white-space: normal; } .examples .random-mac-action { width: 100%; } .examples .random-mac-action:only-of-type { grid-column: 1 / -1; } .app-version { left: 8px; right: auto; } }
+
+@media (max-width: 915px) {
+  .examples-label,
+  .examples .example { display: none; }
+  .examples { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; overflow: visible; white-space: normal; }
+  .examples .random-mac-action { width: 100%; }
+}
+@media (max-width: 590px) {
+  h1 { padding-inline: 80px; line-height: 1.15; }
+  #toggleDarkModeBtn { top: 6px; right: 6px; padding: 4px 7px; font-size: 0.8rem; opacity: 0.62; background: color-mix(in srgb, var(--panel-bg) 72%, transparent); backdrop-filter: blur(4px); }
+  #toggleDarkModeBtn:hover,
+  #toggleDarkModeBtn:focus-visible { opacity: 1; }
+}
+@media (max-width: 640px) { body { margin: 10px; } .tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; overflow: visible; border-bottom: 0; } .tab-button { width: 100%; min-width: 0; white-space: normal; overflow-wrap: anywhere; border: 1px solid var(--panel-border); border-radius: 4px; text-align: center; padding: 8px 6px; font-size: 0.92rem; } .tab-button:last-child { grid-column: 1 / -1; } .input-group, .mac-input-row, .result-grid, .cidr-input-grid, .export-fields { grid-template-columns: 1fr; display: grid; } .step-buttons { grid-template-columns: repeat(4, minmax(0, 1fr)); } .copy-button, .step-button { width: 100%; } .app-version { left: 8px; right: auto; } }
 .range-input-group { grid-template-columns: minmax(0, 1fr) auto; }
 .range-status { display: none; margin-bottom: 10px; padding: 8px 10px; border: 1px solid var(--panel-border); border-radius: 6px; }
 .range-status.is-error { display: block; color: var(--error); border-color: var(--error); background: color-mix(in srgb, var(--error) 8%, var(--result-bg)); }
@@ -143,3 +156,13 @@ summary { cursor: pointer; font-weight: bold; }
   .cidr-table th:nth-child(5),
   .cidr-table td:nth-child(5) { width: 22%; text-align: right; }
 }
+
+.clearable-field { position: relative; display: block; min-width: 0; }
+.clearable-field > input, .clearable-field > textarea { width: 100%; padding-right: 3rem; }
+.clearable-field > textarea { padding-right: 4rem; }
+.field-clear-button { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); min-width: 2rem; height: 1.75rem; padding: 0 0.45rem; line-height: 1; border-radius: 999px; background: var(--button-bg); color: var(--text); border: 1px solid var(--panel-border); }
+.field-clear-button:hover:not(:disabled), .field-clear-button:focus-visible { background: var(--button-hover-bg); outline: 2px solid var(--primary-bg); outline-offset: 1px; }
+.field-clear-button[hidden] { display: none; }
+.clearable-field > textarea + .field-clear-button { top: 10px; right: 22px; transform: none; }
+.input-group > .clearable-field { min-width: 0; }
+.mac-input-row > .clearable-field { flex: 1 1 auto; width: 100%; min-width: 0; }
