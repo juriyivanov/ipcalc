@@ -38,7 +38,7 @@ hasAll(sources['app.js'], [
   'window.fetch = async function compactOuiFetch'
 ]);
 hasAll(sources['app-core.js'], [
-  "const APP_VERSION = '3.15.2'",
+  "const APP_VERSION = '3.16'",
   'function initApp()',
   'function lookupVendor',
   'function renderVendorResult',
@@ -49,7 +49,7 @@ hasAll(full, [
   '<!DOCTYPE html>', '<html lang="en" data-standalone="true">',
   'IPv4 Address Analyzer', 'CIDR Set Calculator', 'MAC Vendor / Formats',
   'id="embedded-oui-db-bin"', 'IPCOUI02', 'function lookupVendor',
-  'Random vendor MAC', "APP_VERSION = '3.15.2'"
+  'Random vendor MAC', "APP_VERSION = '3.16'"
 ]);
 hasNone(full, ['<script src=', 'rel="stylesheet"', 'rel="manifest"', 'src="./oui-db.bin"', 'src="./app-core.js"']);
 assert.strictEqual(count(full, 'id="embedded-oui-db-bin"'), 1);
@@ -57,7 +57,7 @@ assert.strictEqual(count(full, 'id="embedded-oui-db-bin"'), 1);
 hasAll(lite, [
   '<!DOCTYPE html>', '<html lang="en" data-standalone="true">',
   'CIDR Set Calculator', 'MAC Formats', 'Random MAC', 'Unicast',
-  'Globally administered', "APP_VERSION = '3.15.2'"
+  'Globally administered', "APP_VERSION = '3.16'"
 ]);
 hasNone(lite, [
   'embedded-oui-db-bin', 'lookupVendor', 'loadOuiDb', 'Random vendor MAC',
@@ -75,7 +75,7 @@ assert.strictEqual(Core.standaloneSourceCacheKey('https://example.test/ipcalc/in
 
 const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 hasAll(sw, [
-  'ipcalc-pwa-v23', "const OUI_DB_PATH='/ipcalc/oui-db.bin'", './oui-db.bin',
+  'ipcalc-pwa-v24', "const OUI_DB_PATH='/ipcalc/oui-db.bin'", './oui-db.bin',
   './app-core.js', "u.pathname.endsWith('/oui-db.bin')", 'standaloneSourceNetworkFirst', 'shellNetworkFirst'
 ]);
 hasNone(sw, ['./oui-db.json', "u.pathname.endsWith('/oui-db.json')"]);
