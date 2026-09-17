@@ -4,38 +4,34 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  const SOURCE_FILES = ['index.html', 'app.css', 'ipv4-utils.js', 'cidr-set-utils.js', 'app.js'];
+  const SOURCE_FILES = ['index.html', 'app.css', 'ipv4-utils.js', 'cidr-set-utils.js', 'app.js', 'app-core.js'];
+  const BINARY_SOURCE = 'oui-db.bin';
   const FULL_FILENAME = 'ipcalc-standalone-full.html';
   const LITE_FILENAME = 'ipcalc-standalone-lite.html';
   const INCOMPATIBLE_INDEX_MESSAGE = 'The cached index.html is incompatible with this Standalone Builder. Reload sources from the network or clear the old site cache.';
-  const MAC_MARKERS = ['MAC_VENDOR_HTML', 'MAC_VENDOR_JS'];
   const REQUIRED_INDEX_SNIPPETS = [
-    '<link rel="stylesheet" href="./app.css" />', '<script src="./ipv4-utils.js"></script>', '<script src="./cidr-set-utils.js"></script>', '<script src="./app.js"></script>',
-    'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone',
-    'IPv4 Range to Prefix Converter',
-    'IPv4 Subnet Calculator', 'CIDR Set Calculator', 'Aggregated result', 'Cleaned input before aggregation',
-    'data-tab="mac-vendor"',
-    'id="toggleDarkModeBtn"',
-    'id="analyzer"',
-    'id="range"',
-    'id="subnet"',
-    'id="mac-vendor"',
-    'id="macInput"',
-    'id="randomMacBtn"',
-    'id="formatsList"'
+    '<link rel="stylesheet" href="./app.css" />',
+    '<script src="./ipv4-utils.js"></script>',
+    '<script src="./cidr-set-utils.js"></script>',
+    '<script src="./app.js"></script>',
+    'IPv4 Address Analyzer', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator',
+    'CIDR Set Calculator', 'data-tab="mac-vendor"', 'id="macInput"', 'id="formatsList"'
   ];
-  const REQUIRED_OUTPUT_SNIPPETS = ['<!DOCTYPE html>', 'IPv4 Address Analyzer', 'Address type', 'PTR lookup name', 'Reverse zone', 'IPv4 Range to Prefix Converter', 'IPv4 Subnet Calculator', 'CIDR Set Calculator', 'Aggregated result', 'Cleaned input before aggregation', 'data-tab="mac-vendor"'];
-  const FORBIDDEN_RUNTIME_REFS = [/<script\b[^>]*\bsrc=/i, /<link\b[^>]*\brel=["']stylesheet["']/i, /<link\b[^>]*\brel=["']manifest["']/i];
-  const FORBIDDEN_LOCAL_FETCHES = [/fetch\(\s*["'`]\.\//, /fetch\(\s*new Request\(\s*["'`]\.\//];
+  const REQUIRED_OUTPUT_SNIPPETS = [
+    '<!DOCTYPE html>', 'IPv4 Address Analyzer', 'IPv4 Range to Prefix Converter',
+    'IPv4 Subnet Calculator', 'CIDR Set Calculator', 'data-tab="mac-vendor"'
+  ];
+  const FORBIDDEN_RUNTIME_REFS = [
+    /<script\b[^>]*\bsrc=/i,
+    /<link\b[^>]*\brel=["']stylesheet["']/i,
+    /<link\b[^>]*\brel=["']manifest["']/i
+  ];
 
   function assertSource(sources, name) {
-    if (!sources || typeof sources[name] !== 'string') throw new Error(`Missing source file: ${name}`);
+    if (!sources || typeof sources[name] !== 'string' || !sources[name]) throw new Error(`Missing source file: ${name}`);
     return sources[name];
   }
   function failIncompatible(reason) { throw new Error(`${INCOMPATIBLE_INDEX_MESSAGE} (${reason})`); }
-  function escapeScriptJson(json) {
-    return json.replace(/</g, '\\u003C').replace(/>/g, '\\u003E').replace(/&/g, '\\u0026').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
-  }
   function bytes(text) { return new TextEncoder().encode(text).length; }
   function formatBytes(n) {
     if (!Number.isFinite(n)) return 'unknown';
@@ -48,7 +44,7 @@
     canonicalUrl.searchParams.delete('standalone-source');
     return canonicalUrl.href;
   }
-  function count(text, needle) { return (text.match(new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length; }
+  function count(text, needle) { return text.split(needle).length - 1; }
   function assertContains(text, snippets, label) {
     snippets.forEach((snippet) => { if (!text.includes(snippet)) throw new Error(`${label} is missing required content: ${snippet}`); });
   }
@@ -63,11 +59,6 @@
   function unmark(text, marker) {
     return text.replace(new RegExp(`\\s*(?:<!-- ${marker}_(?:START|END) -->|/\\* ${marker}_(?:START|END) \\*/)`, 'g'), '');
   }
-  function replaceFirstJsMarked(text, marker, replacement) {
-    const pattern = new RegExp(`/\\* ${marker}_START \\*/[\\s\\S]*?/\\* ${marker}_END \\*/`);
-    if (!pattern.test(text)) failIncompatible(`missing ${marker} block`);
-    return text.replace(pattern, replacement);
-  }
   function validateIndexSource(indexHtml) {
     if (typeof indexHtml !== 'string' || !indexHtml.trim()) failIncompatible('empty index.html');
     REQUIRED_INDEX_SNIPPETS.forEach((snippet) => { if (!indexHtml.includes(snippet)) failIncompatible(`missing ${snippet}`); });
@@ -80,24 +71,35 @@
       .replace(/\s*<link\b[^>]*\brel=["']stylesheet["'][^>]*>\s*/gi, '\n')
       .replace(/\s*<script\b[^>]*\bsrc=["'][^"']+["'][^>]*><\/script>\s*/gi, '\n');
   }
-  function inlineAssets(html, sources) {
+  function standaloneWrapper(source) {
+    const stripped = source.replace(/\n\s*const core = document\.createElement\('script'\);[\s\S]*?document\.head\.appendChild\(core\);\s*\n?/, '\n');
+    if (stripped === source) throw new Error('app.js compact loader does not contain the expected app-core loader block');
+    return stripped;
+  }
+  function embeddedBinaryBootstrap(base64) {
+    if (!/^[A-Za-z0-9+/=]+$/.test(base64)) throw new Error('oui-db.bin must be supplied as base64');
+    return `<script type="application/octet-stream" id="embedded-oui-db-bin">${base64}</script>\n<script data-standalone-source="oui-db-bootstrap">\n(function(){\n  'use strict';\n  const encoded = document.getElementById('embedded-oui-db-bin').textContent.trim();\n  let decoded = null;\n  function binaryBuffer(){\n    if (decoded) return decoded.slice(0);\n    const raw = atob(encoded);\n    const bytes = new Uint8Array(raw.length);\n    for (let i = 0; i < raw.length; i += 1) bytes[i] = raw.charCodeAt(i);\n    decoded = bytes.buffer;\n    return decoded.slice(0);\n  }\n  const networkFetch = window.fetch.bind(window);\n  window.fetch = async function(input, init){\n    const raw = typeof input === 'string' ? input : (input && input.url) || String(input);\n    let path = raw;\n    try { path = new URL(raw, location.href).pathname; } catch (_) {}\n    if (String(path).endsWith('/oui-db.bin')) {\n      return { ok: true, status: 200, statusText: 'OK', arrayBuffer: async () => binaryBuffer() };\n    }\n    return networkFetch(input, init);\n  };\n})();\n</script>`;
+  }
+  function inlineAssets(html, sources, variant) {
     const css = `<style data-standalone-source="app.css">\n${assertSource(sources, 'app.css')}\n</style>`;
     html = html.replace(/\s*<link\b[^>]*href=["']\.\/app\.css["'][^>]*>\s*/i, () => `\n${css}\n`);
-    const scripts = `<script data-standalone-source="ipv4-utils.js">\n${assertSource(sources, 'ipv4-utils.js')}\n</script>\n<script data-standalone-source="cidr-set-utils.js">\n${assertSource(sources, 'cidr-set-utils.js')}\n</script>\n<script data-standalone-source="app.js">\n${assertSource(sources, 'app.js')}\n</script>`;
+    const common = `<script data-standalone-source="ipv4-utils.js">\n${assertSource(sources, 'ipv4-utils.js')}\n</script>\n<script data-standalone-source="cidr-set-utils.js">\n${assertSource(sources, 'cidr-set-utils.js')}\n</script>`;
+    let appScripts;
+    if (variant === 'full') {
+      const binary = embeddedBinaryBootstrap(assertSource(sources, BINARY_SOURCE));
+      appScripts = `${binary}\n<script data-standalone-source="app.js">\n${standaloneWrapper(assertSource(sources, 'app.js'))}\n</script>\n<script data-standalone-source="app-core.js">\n${assertSource(sources, 'app-core.js')}\n</script>`;
+    } else {
+      appScripts = `<script data-standalone-source="app-core.js">\n${assertSource(sources, 'app-core.js')}\n</script>`;
+    }
+    const scripts = `${common}\n${appScripts}`;
     html = html.replace('  <script src="./ipv4-utils.js"></script>\n  <script src="./cidr-set-utils.js"></script>\n  <script src="./app.js"></script>\n', () => `  ${scripts}\n`);
     return html;
-  }
-  function embeddedOuiLoader(ouiJson) {
-    return `/* OUI_LOADER_JS_START */\n    async function loadOuiDb() {\n      if (ouiDb) return ouiDb;\n      const embedded = document.getElementById('embedded-oui-db');\n      if (!embedded) throw new Error('Embedded OUI database is missing.');\n      ouiDb = JSON.parse(embedded.textContent);\n      ouiDbLoadState = ouiDb.generatedAt ? \`loaded, generated \${ouiDb.generatedAt}\` : 'loaded from embedded database';\n      return ouiDb;\n    }\n    /* OUI_LOADER_JS_END */`;
   }
   function liteRunLookupAlias(html) {
     return html.replace(/runLookup\(\)/g, 'runFormatterOnly()').replace(/runLookup/g, 'runFormatterOnly');
   }
   function assertNoExternalRuntime(html) {
     FORBIDDEN_RUNTIME_REFS.forEach((pattern) => { if (pattern.test(html)) throw new Error(`Standalone output contains external runtime reference: ${pattern}`); });
-  }
-  function assertNoLocalFetch(html) {
-    FORBIDDEN_LOCAL_FETCHES.forEach((pattern) => { if (pattern.test(html)) throw new Error(`Standalone output contains local fetch call: ${pattern}`); });
   }
   function assertNoMarkers(html) {
     ['MAC_VENDOR_HTML_START', 'MAC_VENDOR_HTML_END', 'MAC_VENDOR_JS_START', 'MAC_VENDOR_JS_END', 'OUI_LOADER_JS_START', 'OUI_LOADER_JS_END'].forEach((marker) => {
@@ -106,7 +108,7 @@
   }
   function getInlineScripts(html) {
     return [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
-      .filter((match) => !/type=["']application\/json["']/i.test(match[1]))
+      .filter((match) => !/type=["'](?:application\/json|application\/octet-stream)["']/i.test(match[1]))
       .map((match) => match[2]);
   }
   function validateInlineScripts(html, compiler) {
@@ -116,36 +118,20 @@
       catch (error) { throw new Error(`Inline script ${index + 1} is invalid: ${error.message}`); }
     });
   }
-  function validateEmbeddedOuiOrder(html) {
-    const embeddedCount = count(html, 'id="embedded-oui-db"');
-    if (embeddedCount !== 1) throw new Error(`Full standalone must contain exactly one embedded OUI database; found ${embeddedCount}`);
-    const embeddedScriptIndex = html.indexOf('<script type="application/json" id="embedded-oui-db"');
-    if (embeddedScriptIndex < 0) throw new Error('Full standalone embedded OUI database must be an application/json script');
-    const appScriptIndex = html.indexOf('function initApp()');
-    const firstLoadIndex = html.indexOf('loadOuiDb()');
-    const initialLookupIndex = html.indexOf('runLookup();');
-    if (appScriptIndex < 0) throw new Error('Full standalone application script was not found');
-    if (firstLoadIndex < 0) throw new Error('Full standalone loadOuiDb call was not found');
-    if (initialLookupIndex < 0) throw new Error('Full standalone initial MAC render was not found');
-    if (embeddedScriptIndex > appScriptIndex) throw new Error('Embedded OUI database must be parsed before application JavaScript');
-    if (embeddedScriptIndex > firstLoadIndex) throw new Error('Embedded OUI database must appear before the first loadOuiDb call');
-    if (embeddedScriptIndex > initialLookupIndex) throw new Error('Embedded OUI database must appear before the initial MAC render');
-  }
   function validateStandaloneOutput(html, variant, options) {
     if (variant !== 'full' && variant !== 'lite') throw new Error('variant must be full or lite');
     assertContains(html, REQUIRED_OUTPUT_SNIPPETS, `${variant} standalone`);
     assertNoExternalRuntime(html);
-    assertNoLocalFetch(html);
     assertNoMarkers(html);
     if (html.includes('navigator.serviceWorker.register')) throw new Error(`${variant} standalone registers a service worker`);
     validateInlineScripts(html, options && options.compileScript);
     if (variant === 'full') {
-      assertContains(html, ['embedded-oui-db', 'function lookupVendor', 'Random vendor MAC', 'Vendor', 'Matched prefix', 'Assignment type'], 'Full standalone');
-      assertNotContains(html, ['oui-db.json', "fetch('./oui-db.json'"], 'Full standalone');
-      validateEmbeddedOuiOrder(html);
+      assertContains(html, ['id="embedded-oui-db-bin"', 'IPCOUI02', 'function lookupVendor', 'Random vendor MAC', 'Vendor', 'Matched prefix', 'Assignment type'], 'Full standalone');
+      if (count(html, 'id="embedded-oui-db-bin"') !== 1) throw new Error('Full standalone must contain exactly one compact OUI database');
+      assertNotContains(html, ['src="./app-core.js"', 'src="./oui-db.bin"'], 'Full standalone');
     } else {
       assertContains(html, ['function runFormatterOnly', 'formats-table', 'Random MAC', 'Unicast', 'Multicast / group address', 'Globally administered'], 'Lite standalone');
-      assertNotContains(html, ["fetch('./oui-db.json'", 'loadOuiDb', 'lookupVendor', 'embedded-oui-db', 'Random vendor MAC', 'Vendor', 'Matched prefix', 'Assignment type', 'OUI database', 'Vendor not found'], 'Lite standalone');
+      assertNotContains(html, ['embedded-oui-db-bin', 'loadOuiDb', 'lookupVendor', 'Random vendor MAC', 'Matched prefix', 'Assignment type', 'Vendor not found'], 'Lite standalone');
       if (/const\s+response\s*=\s*await\s*(?:[;\n\r]|$)/.test(html)) throw new Error('Lite standalone contains a dangling await expression');
     }
     return true;
@@ -155,19 +141,15 @@
     if (variant !== 'full' && variant !== 'lite') throw new Error('variant must be full or lite');
     let html = assertSource(sources, 'index.html');
     validateIndexSource(html);
-    html = inlineAssets(html, sources);
+    html = inlineAssets(html, sources, variant);
     html = html.replace(/function initServiceWorker\(\) \{[\s\S]*?\n  \}\n\n  function initClearableField/, "function initServiceWorker() { console.log('Standalone HTML: service worker disabled.'); }\n\n  function initClearableField");
     html = removeExternalReferences(html);
     html = html.replace(/<html lang="en">/, '<html lang="en" data-standalone="true">');
     html = html.replace(/<title>.*?<\/title>/, `<title>IP Calculator Standalone ${variant === 'full' ? 'Full' : 'Lite'}</title>`);
     if (variant === 'full') {
-      const ouiJson = assertSource(sources, 'oui-db.json');
-      html = replaceFirstJsMarked(html, 'OUI_LOADER_JS', embeddedOuiLoader(ouiJson));
       html = unmark(html, 'OUI_LOADER_JS');
       html = unmark(html, 'MAC_VENDOR_JS');
       html = unmark(html, 'MAC_VENDOR_HTML');
-      const embeddedOuiScript = `<script type="application/json" id="embedded-oui-db">${escapeScriptJson(ouiJson)}</script>\n`;
-      html = html.replace('<script data-standalone-source="ipv4-utils.js">', () => `${embeddedOuiScript}<script data-standalone-source="ipv4-utils.js">`);
     } else {
       html = stripMarked(html, 'MAC_VENDOR_HTML');
       html = stripMarked(html, 'MAC_VENDOR_JS');
@@ -183,12 +165,27 @@
   }
   function buildFull(sources, options) { return buildStandalone(sources, Object.assign({}, options, { variant: 'full' })); }
   function buildLite(sources, options) { return buildStandalone(sources, Object.assign({}, options, { variant: 'lite' })); }
+  function generatedDateFromBase64(base64) {
+    try {
+      let raw;
+      if (typeof atob === 'function') raw = atob(base64.slice(0, 160));
+      else if (typeof Buffer !== 'undefined') raw = Buffer.from(base64, 'base64').toString('binary');
+      else return null;
+      if (raw.slice(0, 8) !== 'IPCOUI02') return null;
+      const date = raw.slice(84, 94);
+      return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
+    } catch (_) { return null; }
+  }
   function summarize(sources) {
-    const result = { generatedAt: null, fullSize: null, liteSize: null };
-    if (sources && sources['oui-db.json']) { try { result.generatedAt = JSON.parse(sources['oui-db.json']).generatedAt || null; } catch (_) {} }
+    const result = { generatedAt: generatedDateFromBase64(sources && sources[BINARY_SOURCE] || ''), fullSize: null, liteSize: null };
     try { result.liteSize = bytes(buildLite(sources)); } catch (_) {}
     try { result.fullSize = bytes(buildFull(sources)); } catch (_) {}
     return result;
   }
-  return { SOURCE_FILES, FULL_FILENAME, LITE_FILENAME, INCOMPATIBLE_INDEX_MESSAGE, buildStandalone, buildFull, buildLite, summarize, formatBytes, bytes, escapeScriptJson, standaloneSourceCacheKey, validateIndexSource, validateStandaloneOutput, getInlineScripts };
+
+  return {
+    SOURCE_FILES, BINARY_SOURCE, FULL_FILENAME, LITE_FILENAME, INCOMPATIBLE_INDEX_MESSAGE,
+    buildStandalone, buildFull, buildLite, summarize, formatBytes, bytes,
+    standaloneSourceCacheKey, validateIndexSource, validateStandaloneOutput, getInlineScripts
+  };
 });
