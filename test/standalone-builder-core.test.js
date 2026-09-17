@@ -30,7 +30,8 @@ hasAll(sources['index.html'], [
 hasAll(sources['app.js'], [
   "const CORE_SCRIPT = './app-core.js'",
   "const COMPACT_DB_PATH = './oui-db.bin.gz'",
-  "const MAGIC = 'DecompressionStream'",
+  "const MAGIC = 'IPCOUI02'",
+  'DecompressionStream',
   'new DataView(buffer)',
   'function findVendorId',
   'function decodeVendorBlock',
