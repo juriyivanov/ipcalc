@@ -1,7 +1,7 @@
-const CACHE_NAME='ipcalc-pwa-v22';
-const OUI_DB_PATH='/ipcalc/oui-db.json';
-const SHELL_ASSET_PATHS=new Set(['/ipcalc/index.html','/ipcalc/app.css','/ipcalc/app.js','/ipcalc/ipv4-utils.js','/ipcalc/cidr-set-utils.js','/index.html','/app.css','/app.js','/ipv4-utils.js','/cidr-set-utils.js']);
-const ASSETS=['./','./index.html','./app.css','./app.js','./ipv4-utils.js','./cidr-set-utils.js','./oui-db.json','./manifest.json','./icon.svg','./icon-192.svg','./icon-512.svg','./standalone-builder.html','./standalone-builder.js','./standalone-builder-core.js'];
+const CACHE_NAME='ipcalc-pwa-v25';
+const OUI_DB_PATH='/ipcalc/oui-db.bin.gz';
+const SHELL_ASSET_PATHS=new Set(['/ipcalc/index.html','/ipcalc/app.css','/ipcalc/app.js','/ipcalc/app-core.js','/ipcalc/ipv4-utils.js','/ipcalc/cidr-set-utils.js','/index.html','/app.css','/app.js','/app-core.js','/ipv4-utils.js','/cidr-set-utils.js']);
+const ASSETS=['./','./index.html','./app.css','./app.js','./app-core.js','./ipv4-utils.js','./cidr-set-utils.js','./oui-db.bin.gz','./manifest.json','./icon.svg','./icon-192.svg','./icon-512.svg','./standalone-builder.html','./standalone-builder.js','./standalone-builder-core.js'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE_NAME).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));
 
@@ -21,12 +21,12 @@ async function standaloneSourceNetworkFirst(request){
 
 async function ouiStaleWhileRevalidate(e){
   const c=await caches.open(CACHE_NAME);
-  const cached=await c.match(e.request)||await c.match('./oui-db.json');
+  const cached=await c.match(e.request)||await c.match('./oui-db.bin.gz');
   const refresh=fetch(new Request(e.request.url,{cache:'reload',credentials:e.request.credentials,mode:e.request.mode,redirect:e.request.redirect}))
     .then(async r=>{if(r&&r.ok)await c.put(e.request,r.clone());return r;})
     .catch(()=>null);
   if(cached){e.waitUntil(refresh);return cached;}
-  return await refresh||new Response('{}',{headers:{'content-type':'application/json'}});
+  return await refresh||new Response(new Uint8Array(0),{status:503,headers:{'content-type':'application/octet-stream'}});
 }
 
 async function shellNetworkFirst(request){
@@ -51,7 +51,7 @@ self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
   const u=new URL(e.request.url);if(u.origin!==self.location.origin)return;
   if(u.searchParams.has('standalone-source'))return e.respondWith(standaloneSourceNetworkFirst(e.request));
-  if(u.pathname===OUI_DB_PATH||u.pathname.endsWith('/oui-db.json'))return e.respondWith(ouiStaleWhileRevalidate(e));
+  if(u.pathname===OUI_DB_PATH||u.pathname.endsWith('/oui-db.bin.gz'))return e.respondWith(ouiStaleWhileRevalidate(e));
   if(e.request.mode==='navigate'||e.request.destination==='document'||SHELL_ASSET_PATHS.has(u.pathname))return e.respondWith(shellNetworkFirst(e.request));
   e.respondWith(cacheFirst(e.request));
 });
