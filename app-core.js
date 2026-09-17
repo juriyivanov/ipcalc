@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const APP_VERSION = '3.15.2';
+  const APP_VERSION = '3.16';
 
   function renderAppVersion() {
     const element = document.getElementById('appVersion');
