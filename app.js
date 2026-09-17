@@ -234,8 +234,20 @@
     }
   };
 
+  let domContentLoadedSeen = document.readyState !== 'loading';
+  if (!domContentLoadedSeen) {
+    document.addEventListener('DOMContentLoaded', () => {
+      domContentLoadedSeen = true;
+    }, { once: true });
+  }
+
   const core = document.createElement('script');
   core.src = CORE_SCRIPT;
   core.async = false;
+  core.addEventListener('load', () => {
+    if (domContentLoadedSeen) {
+      document.dispatchEvent(new Event('DOMContentLoaded'));
+    }
+  }, { once: true });
   document.head.appendChild(core);
 })();
