@@ -2,8 +2,13 @@ const assert = require('assert');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 
-const db = fs.readFileSync(path.join(__dirname, '..', 'oui-db.bin'));
+const compressed = fs.readFileSync(path.join(__dirname, '..', 'oui-db.bin.gz'));
+assert(compressed.length > 100000 && compressed.length < 1024 * 1024, 'compressed compact DB size is implausible');
+assert.strictEqual(compressed[0], 0x1f);
+assert.strictEqual(compressed[1], 0x8b);
+const db = zlib.gunzipSync(compressed);
 assert(db.length > 100000 && db.length < 2 * 1024 * 1024, 'compact DB size is implausible');
 assert.strictEqual(db.subarray(0, 8).toString('ascii'), 'IPCOUI02');
 assert.strictEqual(db.readUInt16LE(8), 2);
@@ -72,4 +77,4 @@ for (let block = 0; block < blockCount; block += 1) {
   }
 }
 assert.strictEqual(decodedVendors, vendorCount);
-console.log(`Compact OUI DB: ${count24 + count28 + count36} prefixes, ${vendorCount} vendors, ${db.length} bytes`);
+console.log(`Compact OUI DB: ${count24 + count28 + count36} prefixes, ${vendorCount} vendors, ${db.length} raw bytes, ${compressed.length} gzip bytes`);

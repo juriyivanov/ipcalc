@@ -29,8 +29,8 @@ hasAll(sources['index.html'], [
 ]);
 hasAll(sources['app.js'], [
   "const CORE_SCRIPT = './app-core.js'",
-  "const COMPACT_DB_PATH = './oui-db.bin'",
-  "const MAGIC = 'IPCOUI02'",
+  "const COMPACT_DB_PATH = './oui-db.bin.gz'",
+  "const MAGIC = 'DecompressionStream'",
   'new DataView(buffer)',
   'function findVendorId',
   'function decodeVendorBlock',
@@ -48,11 +48,11 @@ hasAll(sources['app-core.js'], [
 hasAll(full, [
   '<!DOCTYPE html>', '<html lang="en" data-standalone="true">',
   'IPv4 Address Analyzer', 'CIDR Set Calculator', 'MAC Vendor / Formats',
-  'id="embedded-oui-db-bin"', 'IPCOUI02', 'function lookupVendor',
+  'id="embedded-oui-db-gzip"', 'DecompressionStream', 'function lookupVendor',
   'Random vendor MAC', "APP_VERSION = '3.16'"
 ]);
-hasNone(full, ['<script src=', 'rel="stylesheet"', 'rel="manifest"', 'src="./oui-db.bin"', 'src="./app-core.js"']);
-assert.strictEqual(count(full, 'id="embedded-oui-db-bin"'), 1);
+hasNone(full, ['<script src=', 'rel="stylesheet"', 'rel="manifest"', 'src="./oui-db.bin.gz"', 'src="./app-core.js"']);
+assert.strictEqual(count(full, 'id="embedded-oui-db-gzip"'), 1);
 
 hasAll(lite, [
   '<!DOCTYPE html>', '<html lang="en" data-standalone="true">',
@@ -60,7 +60,7 @@ hasAll(lite, [
   'Globally administered', "APP_VERSION = '3.16'"
 ]);
 hasNone(lite, [
-  'embedded-oui-db-bin', 'lookupVendor', 'loadOuiDb', 'Random vendor MAC',
+  'embedded-oui-db-gzip', 'lookupVendor', 'loadOuiDb', 'Random vendor MAC',
   'Matched prefix', 'Vendor not found', '<script src=', 'rel="stylesheet"', 'rel="manifest"'
 ]);
 assert(lite.length < full.length * 0.25, 'Lite should stay much smaller than compact Full');
@@ -70,19 +70,19 @@ const summary = Core.summarize(sources);
 assert.match(summary.generatedAt || '', /^\d{4}-\d{2}-\d{2}$/);
 assert(summary.fullSize > summary.liteSize);
 assert.deepStrictEqual(Core.SOURCE_FILES, ['index.html', 'app.css', 'ipv4-utils.js', 'cidr-set-utils.js', 'app.js', 'app-core.js']);
-assert.strictEqual(Core.BINARY_SOURCE, 'oui-db.bin');
+assert.strictEqual(Core.BINARY_SOURCE, 'oui-db.bin.gz');
 assert.strictEqual(Core.standaloneSourceCacheKey('https://example.test/ipcalc/index.html?standalone-source=v4'), 'https://example.test/ipcalc/index.html');
 
 const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 hasAll(sw, [
-  'ipcalc-pwa-v24', "const OUI_DB_PATH='/ipcalc/oui-db.bin'", './oui-db.bin',
-  './app-core.js', "u.pathname.endsWith('/oui-db.bin')", 'standaloneSourceNetworkFirst', 'shellNetworkFirst'
+  'ipcalc-pwa-v25', "const OUI_DB_PATH='/ipcalc/oui-db.bin.gz'", './oui-db.bin.gz',
+  './app-core.js', "u.pathname.endsWith('/oui-db.bin.gz')", 'standaloneSourceNetworkFirst', 'shellNetworkFirst'
 ]);
 hasNone(sw, ['./oui-db.json', "u.pathname.endsWith('/oui-db.json')"]);
 
 const builderJs = fs.readFileSync(path.join(root, 'standalone-builder.js'), 'utf8');
 hasAll(builderJs, [
-  "const BUILD_REVISION = 'standalone-builder-v4'",
+  "const BUILD_REVISION = 'standalone-builder-v5'",
   'const files = [...Core.SOURCE_FILES, Core.BINARY_SOURCE]',
   'arrayBufferToBase64',
   "fetch(freshUrl, { cache: 'reload' })"

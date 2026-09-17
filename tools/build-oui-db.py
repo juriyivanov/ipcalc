@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import hashlib
+import gzip
 import json
 import re
 import struct
@@ -380,7 +381,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Build compact binary OUI database for IP Calculator MAC tools"
     )
-    parser.add_argument("-o", "--output", default="oui-db.bin", help="Output binary path")
+    parser.add_argument("-o", "--output", default="oui-db.bin.gz", help="Output compact DB path (.gz for gzip, otherwise raw binary)")
     parser.add_argument(
         "--input-json",
         help="Convert an existing legacy oui-db.json instead of downloading sources",
@@ -421,7 +422,12 @@ def main() -> int:
     verify_binary(db, entries)
 
     output = Path(args.output)
-    output.write_bytes(db)
+    if output.suffix == '.gz':
+        gzip_mtime = int(dt.datetime.fromisoformat(generated_date).replace(tzinfo=dt.timezone.utc).timestamp())
+        output_bytes = gzip.compress(db, compresslevel=9, mtime=gzip_mtime)
+    else:
+        output_bytes = db
+    output.write_bytes(output_bytes)
 
     counts = {digits: 0 for digits in PREFIX_BITS}
     for prefix in entries:
@@ -431,7 +437,7 @@ def main() -> int:
     print(
         f"Wrote {sum(counts.values()):,} prefixes "
         f"(/24={counts[6]:,}, /28={counts[7]:,}, /36={counts[9]:,}) "
-        f"to {output} ({len(db):,} bytes); verification passed",
+        f"to {output} ({len(output_bytes):,} bytes; raw {len(db):,}); verification passed",
         file=sys.stderr,
     )
     return 0

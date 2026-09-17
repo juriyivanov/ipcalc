@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const Core = window.StandaloneBuilderCore;
-  const BUILD_REVISION = 'standalone-builder-v4';
+  const BUILD_REVISION = 'standalone-builder-v5';
   const sourceStatus = document.getElementById('sourceStatus');
   const buildStatus = document.getElementById('buildStatus');
   const generationDate = document.getElementById('generationDate');

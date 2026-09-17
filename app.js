@@ -2,7 +2,7 @@
   'use strict';
 
   const CORE_SCRIPT = './app-core.js';
-  const COMPACT_DB_PATH = './oui-db.bin';
+  const COMPACT_DB_PATH = './oui-db.bin.gz';
   const LEGACY_DB_SUFFIX = '/oui-db.json';
   const MAGIC = 'IPCOUI02';
   const HEADER_SIZE = 96;
@@ -25,6 +25,20 @@
       out += String.fromCharCode(value);
     }
     return out;
+  }
+
+  function isGzipBuffer(buffer) {
+    const bytes = new Uint8Array(buffer);
+    return bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
+  }
+
+  async function decompressCompactDb(buffer) {
+    if (!isGzipBuffer(buffer)) return buffer;
+    if (typeof DecompressionStream !== 'function') {
+      throw new Error('This browser does not support gzip decompression via DecompressionStream.');
+    }
+    const stream = new Blob([buffer]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return new Response(stream).arrayBuffer();
   }
 
   function parseCompactDb(buffer) {
@@ -188,7 +202,8 @@
   async function loadCompactCompatibilityDb() {
     const response = await originalFetch(COMPACT_DB_PATH, { cache: 'force-cache' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const db = parseCompactDb(await response.arrayBuffer());
+    const compressed = await response.arrayBuffer();
+    const db = parseCompactDb(await decompressCompactDb(compressed));
     return {
       generatedAt: db.generatedAt || null,
       entries: makeLegacyEntriesProxy(db),

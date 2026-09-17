@@ -5,7 +5,7 @@
   'use strict';
 
   const SOURCE_FILES = ['index.html', 'app.css', 'ipv4-utils.js', 'cidr-set-utils.js', 'app.js', 'app-core.js'];
-  const BINARY_SOURCE = 'oui-db.bin';
+  const BINARY_SOURCE = 'oui-db.bin.gz';
   const FULL_FILENAME = 'ipcalc-standalone-full.html';
   const LITE_FILENAME = 'ipcalc-standalone-lite.html';
   const INCOMPATIBLE_INDEX_MESSAGE = 'The cached index.html is incompatible with this Standalone Builder. Reload sources from the network or clear the old site cache.';
@@ -77,8 +77,8 @@
     return stripped;
   }
   function embeddedBinaryBootstrap(base64) {
-    if (!/^[A-Za-z0-9+/=]+$/.test(base64)) throw new Error('oui-db.bin must be supplied as base64');
-    return `<script type="application/octet-stream" id="embedded-oui-db-bin">${base64}</script>\n<script data-standalone-source="oui-db-bootstrap">\n(function(){\n  'use strict';\n  const encoded = document.getElementById('embedded-oui-db-bin').textContent.trim();\n  let decoded = null;\n  function binaryBuffer(){\n    if (decoded) return decoded.slice(0);\n    const raw = atob(encoded);\n    const bytes = new Uint8Array(raw.length);\n    for (let i = 0; i < raw.length; i += 1) bytes[i] = raw.charCodeAt(i);\n    decoded = bytes.buffer;\n    return decoded.slice(0);\n  }\n  const networkFetch = window.fetch.bind(window);\n  window.fetch = async function(input, init){\n    const raw = typeof input === 'string' ? input : (input && input.url) || String(input);\n    let path = raw;\n    try { path = new URL(raw, location.href).pathname; } catch (_) {}\n    if (String(path).endsWith('/oui-db.bin')) {\n      return { ok: true, status: 200, statusText: 'OK', arrayBuffer: async () => binaryBuffer() };\n    }\n    return networkFetch(input, init);\n  };\n})();\n</script>`;
+    if (!/^[A-Za-z0-9+/=]+$/.test(base64)) throw new Error('oui-db.bin.gz must be supplied as base64');
+    return `<script type="application/octet-stream" id="embedded-oui-db-gzip">${base64}</script>\n<script data-standalone-source="oui-db-bootstrap">\n(function(){\n  'use strict';\n  const encoded = document.getElementById('embedded-oui-db-gzip').textContent.trim();\n  let decoded = null;\n  function binaryBuffer(){\n    if (decoded) return decoded.slice(0);\n    const raw = atob(encoded);\n    const bytes = new Uint8Array(raw.length);\n    for (let i = 0; i < raw.length; i += 1) bytes[i] = raw.charCodeAt(i);\n    decoded = bytes.buffer;\n    return decoded.slice(0);\n  }\n  const networkFetch = window.fetch.bind(window);\n  window.fetch = async function(input, init){\n    const raw = typeof input === 'string' ? input : (input && input.url) || String(input);\n    let path = raw;\n    try { path = new URL(raw, location.href).pathname; } catch (_) {}\n    if (String(path).endsWith('/oui-db.bin.gz')) {\n      return { ok: true, status: 200, statusText: 'OK', arrayBuffer: async () => binaryBuffer() };\n    }\n    return networkFetch(input, init);\n  };\n})();\n</script>`;
   }
   function inlineAssets(html, sources, variant) {
     const css = `<style data-standalone-source="app.css">\n${assertSource(sources, 'app.css')}\n</style>`;
@@ -126,12 +126,12 @@
     if (html.includes('navigator.serviceWorker.register')) throw new Error(`${variant} standalone registers a service worker`);
     validateInlineScripts(html, options && options.compileScript);
     if (variant === 'full') {
-      assertContains(html, ['id="embedded-oui-db-bin"', 'IPCOUI02', 'function lookupVendor', 'Random vendor MAC', 'Vendor', 'Matched prefix', 'Assignment type'], 'Full standalone');
-      if (count(html, 'id="embedded-oui-db-bin"') !== 1) throw new Error('Full standalone must contain exactly one compact OUI database');
-      assertNotContains(html, ['src="./app-core.js"', 'src="./oui-db.bin"'], 'Full standalone');
+      assertContains(html, ['id="embedded-oui-db-gzip"', 'DecompressionStream', 'function lookupVendor', 'Random vendor MAC', 'Vendor', 'Matched prefix', 'Assignment type'], 'Full standalone');
+      if (count(html, 'id="embedded-oui-db-gzip"') !== 1) throw new Error('Full standalone must contain exactly one compact gzip OUI database');
+      assertNotContains(html, ['src="./app-core.js"', 'src="./oui-db.bin.gz"'], 'Full standalone');
     } else {
       assertContains(html, ['function runFormatterOnly', 'formats-table', 'Random MAC', 'Unicast', 'Multicast / group address', 'Globally administered'], 'Lite standalone');
-      assertNotContains(html, ['embedded-oui-db-bin', 'loadOuiDb', 'lookupVendor', 'Random vendor MAC', 'Matched prefix', 'Assignment type', 'Vendor not found'], 'Lite standalone');
+      assertNotContains(html, ['embedded-oui-db-gzip', 'loadOuiDb', 'lookupVendor', 'Random vendor MAC', 'Matched prefix', 'Assignment type', 'Vendor not found'], 'Lite standalone');
       if (/const\s+response\s*=\s*await\s*(?:[;\n\r]|$)/.test(html)) throw new Error('Lite standalone contains a dangling await expression');
     }
     return true;
@@ -169,11 +169,17 @@
     try {
       let raw;
       if (typeof atob === 'function') raw = atob(base64.slice(0, 160));
-      else if (typeof Buffer !== 'undefined') raw = Buffer.from(base64, 'base64').toString('binary');
+      else if (typeof Buffer !== 'undefined') raw = Buffer.from(base64.slice(0, 160), 'base64').toString('binary');
       else return null;
-      if (raw.slice(0, 8) !== 'IPCOUI02') return null;
-      const date = raw.slice(84, 94);
-      return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
+      if (raw.slice(0, 8) === 'IPCOUI02') {
+        const date = raw.slice(84, 94);
+        return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
+      }
+      if (raw.length >= 8 && raw.charCodeAt(0) === 0x1f && raw.charCodeAt(1) === 0x8b) {
+        const mtime = (raw.charCodeAt(4) | (raw.charCodeAt(5) << 8) | (raw.charCodeAt(6) << 16) | (raw.charCodeAt(7) << 24)) >>> 0;
+        return mtime ? new Date(mtime * 1000).toISOString().slice(0, 10) : null;
+      }
+      return null;
     } catch (_) { return null; }
   }
   function summarize(sources) {
